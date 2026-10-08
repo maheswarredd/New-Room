@@ -86,6 +86,23 @@ export const createPayment = async (req, res) => {
     });
 
     await payment.save();
+    try {
+  await sendMemberDueNotification({
+    member: actualFromUser,
+    monthKey,
+    pendingDue,
+  });
+} catch (error) {
+  console.error(
+    '[Brevo] Payment due update email failed:',
+    error.message
+  );
+}
+
+return res.status(201).json({
+  success: true,
+  payment,
+});
 
     const populated = await Payment.findById(payment._id).populate('fromUser', 'name avatar roomNo');
     // ---------------------------------------------
