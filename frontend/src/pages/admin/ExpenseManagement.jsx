@@ -23,6 +23,11 @@ export default function ExpenseManagement() {
   const [expenses, setExpenses] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fundSummary, setFundSummary] = useState({
+  totalFund: 0,
+  usedFund: 0,
+  remainingFund: 0,
+  });
 
   // Filters
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -60,14 +65,20 @@ export default function ExpenseManagement() {
   }, []);
 
   useEffect(() => {
-    fetchExpenses();
-  }, [selectedMonth, selectedCategory, selectedPaidBy, searchQuery]);
-
+  fetchExpenses();
+  fetchFundSummary();
+}, [
+  selectedMonth,
+  selectedCategory,
+  selectedPaidBy,
+  searchQuery,
+]);
   const fetchInitial = async () => {
     try {
       const [mRes, memRes] = await Promise.all([
         api.get('/summary/months'),
         api.get('/members'),
+        api.get(`/summary/monthly?month=${selectedMonth || ''}`),
       ]);
 
       if (mRes.data.success) {
@@ -102,6 +113,40 @@ export default function ExpenseManagement() {
       setLoading(false);
     }
   };
+  const fetchFundSummary = async () => {
+  try {
+    if (!selectedMonth) return;
+
+    const res = await api.get(
+      `/summary/monthly?month=${selectedMonth}`
+    );
+
+    const summary = res.data?.roomSummary;
+
+    if (!summary) {
+      setFundSummary({
+        totalFund: 0,
+        usedFund: 0,
+        remainingFund: 0,
+      });
+      return;
+    }
+
+    setFundSummary({
+      totalFund: Number(summary.totalRoomFund || 0),
+      usedFund: Number(summary.usedRoomFund || 0),
+      remainingFund: Number(summary.remainingRoomFund || 0),
+    });
+  } catch (error) {
+    console.error('Failed to load room fund:', error);
+
+    setFundSummary({
+      totalFund: 0,
+      usedFund: 0,
+      remainingFund: 0,
+    });
+  }
+};
 
   const handleOpenAdd = () => {
     setFormData({
@@ -368,6 +413,40 @@ export default function ExpenseManagement() {
             </div>
           </div>
         </div>
+        {/* ROOM FUND CARDS START */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+       <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+       <p className="text-sm font-semibold text-slate-500">
+         Total Room Fund
+        </p>
+
+       <p className="mt-1 text-2xl font-black text-slate-900">
+        ₹{fundSummary.totalFund.toLocaleString('en-IN')}
+       </p>
+       </div>
+
+     <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+      <p className="text-sm font-semibold text-slate-500">
+        Used from Fund
+      </p>
+
+      <p className="mt-1 text-2xl font-black text-orange-600">
+       ₹{fundSummary.usedFund.toLocaleString('en-IN')}
+      </p>
+     </div>
+
+    <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm">
+     <p className="text-sm font-semibold text-slate-500">
+       Remaining Fund
+      </p>
+
+     <p className="mt-1 text-2xl font-black text-green-600">
+       ₹{fundSummary.remainingFund.toLocaleString('en-IN')}
+     </p>
+   </div>
+
+    </div>
 
         {/* Aggregate sum badge */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
