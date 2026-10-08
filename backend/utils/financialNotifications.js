@@ -135,18 +135,18 @@ export const calculateMemberDue = async (
         0
       );
 
-  const previousPayments =
-    previousPayments
-      .filter(
-        (payment) =>
-          payment.fromUser?.toString() ===
-          memberId.toString()
-      )
-      .reduce(
-        (sum, payment) =>
-          sum + Number(payment.amount || 0),
-        0
-      );
+  const previousPaymentsTotal =
+  previousPayments
+    .filter(
+      (payment) =>
+        payment.fromUser?.toString() ===
+        memberId.toString()
+    )
+    .reduce(
+      (sum, payment) =>
+        sum + Number(payment.amount || 0),
+      0
+    );
 
   let previousShare = 0;
 
@@ -181,10 +181,10 @@ export const calculateMemberDue = async (
       );
 
   carryForward +=
-    previousPaidExpenses +
-    previousPayments -
-    previousShare +
-    previousAdjustment;
+  previousPaidExpenses +
+  previousPaymentsTotal -
+  previousShare +
+  previousAdjustment;
 
   const totalPaid =
     expensesPaid + directPayments;
