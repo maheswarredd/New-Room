@@ -109,7 +109,7 @@ export default function ExpenseManagement() {
       amount: '',
       category: 'grocery',
       date: new Date().toISOString().split('T')[0],
-      paidBy: members[0]?._id || user?.id,
+      paidBy: members[0]?._id || 'ADMIN_FUND',
       splitType: 'equal',
       description: '',
       receiptPhoto: '',
@@ -617,7 +617,7 @@ export default function ExpenseManagement() {
                       </option>
                     ))}
                     {user?.role === 'admin' && (
-                      <option value={user.id}>Admin / Room Common Fund</option>
+                      <option value="ADMIN_FUND">Admin / Room Common Fund</option>
                     )}
                   </select>
                 </div>
