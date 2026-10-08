@@ -226,6 +226,28 @@ if (paymentSource === 'room_fund') {
       });
 
     await expense.save();
+    // STEP 12 — Due email notification
+    try {
+  const affectedMemberIds = resolvedSplit
+    .map((item) => item.user)
+    .filter(Boolean);
+
+  await Promise.all(
+    affectedMemberIds.map((memberId) =>
+      notifyMemberDue({
+        memberId,
+        monthKey,
+      })
+    )
+  );
+} catch (error) {
+  console.error(
+    '[Brevo] Member due email failed:',
+    error.message
+  );
+}
+
+    
     // ---------------------------------------------
 // BREVO EMAIL - ROOM FUND ZERO ALERT
 // ---------------------------------------------
