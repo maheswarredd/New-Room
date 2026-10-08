@@ -409,6 +409,24 @@ export const sendDueEmail = async ({
   });
 };
 
+export const sendMemberDueNotification = async ({
+  member,
+  monthKey,
+  pendingDue,
+}) => {
+  if (!member?.email) return;
+
+  if (Number(pendingDue) <= 0) {
+    return;
+  }
+
+  await sendDueEmail({
+    member,
+    monthKey,
+    pendingDue,
+  });
+};
+
 export const sendFundZeroEmail = async ({
   totalFund,
   usedFund,
