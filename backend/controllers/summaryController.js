@@ -76,11 +76,17 @@ export const getMonthlySummary = async (req, res) => {
     });
 
     const totalPaymentsReceived = payments.reduce((sum, p) => sum + p.amount, 0);
+    const roomFundExpenses = expenses
+     .filter((e) => e.paymentSource === 'room_fund')
+     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+    const remainingRoomFund =
+     totalPaymentsReceived - roomFundExpenses;
     const adminUser = await User.findOne({ role: 'admin' }).select('_id');
     const adminPaidExpenses = expenses
       .filter((e) => adminUser && e.paidBy && e.paidBy.toString() === adminUser._id.toString())
       .reduce((sum, e) => sum + e.amount, 0);
-    const memberPaidExpenses = totalRoomExpenses - adminPaidExpenses;
+     const memberPaidExpenses = totalRoomExpenses - adminPaidExpenses;
 
     // Calculate carry forward from all previous months up to targetMonth
     // (A month key like '2026-09' is lexicographically less than '2026-10')
@@ -212,6 +218,9 @@ export const getMonthlySummary = async (req, res) => {
       roomSummary: {
         totalRoomExpenses,
         totalPaymentsReceived,
+        totalRoomFund: Math.round(totalPaymentsReceived * 100) / 100,
+        usedRoomFund: Math.round(roomFundExpenses * 100) / 100,
+        remainingRoomFund: Math.round(remainingRoomFund * 100) / 100,
         adminPaidExpenses: Math.round(adminPaidExpenses * 100) / 100,
         memberPaidExpenses: Math.round(memberPaidExpenses * 100) / 100,
         totalPendingMemberDue,
