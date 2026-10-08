@@ -2,6 +2,9 @@ import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import { sendPushToUsers } from '../utils/fcm.js';
 import { sendPaymentEmail } from '../utils/email.js';
+import {
+  notifyMemberDue,
+} from '../utils/financialNotifications.js';
 
 // @desc    Get payments (Admin sees all; Member sees their own)
 // @route   GET /api/payments
