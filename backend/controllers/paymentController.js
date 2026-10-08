@@ -1,6 +1,7 @@
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import { sendPushToUsers } from '../utils/fcm.js';
+import { sendPaymentEmail } from '../utils/email.js';
 
 // @desc    Get payments (Admin sees all; Member sees their own)
 // @route   GET /api/payments
@@ -84,6 +85,28 @@ export const createPayment = async (req, res) => {
     await payment.save();
 
     const populated = await Payment.findById(payment._id).populate('fromUser', 'name avatar roomNo');
+    // ---------------------------------------------
+// BREVO EMAIL - PAYMENT RECORDED
+// ---------------------------------------------
+try {
+  const paymentWithUser = await Payment.findById(payment._id)
+    .populate('fromUser', 'name email roomNo')
+    .populate('recordedBy', 'name');
+
+  await sendPaymentEmail({
+    member: paymentWithUser?.fromUser,
+    amount: paymentWithUser?.amount,
+    paymentMethod: paymentWithUser?.paymentMethod,
+    paymentType: paymentWithUser?.paymentType,
+    notes: paymentWithUser?.notes,
+    recordedBy: paymentWithUser?.recordedBy || req.user,
+  });
+} catch (emailError) {
+  console.error(
+    '[Brevo] Payment email failed:',
+    emailError.message
+  );
+}
 
     await sendPushToUsers([actualFromUser], {
       title: '💳 Payment Recorded',
