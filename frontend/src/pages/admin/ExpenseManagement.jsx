@@ -699,6 +699,15 @@ export default function ExpenseManagement() {
                       <option value="ADMIN_FUND">Admin / Room Common Fund</option>
                     )}
                   </select>
+                  {formData.paidBy === 'ADMIN_FUND' && (
+                  <div className="mt-2 rounded-lg bg-green-50 border border-green-200 px-3 py-2">
+                  <p className="text-sm font-bold text-green-700">
+                   Room Common Fund Available: ₹
+                  {fundSummary.remainingFund.toLocaleString()}
+                  </p>
+                  </div>
+                  )}
+                  
                 </div>
               </div>
 
