@@ -3,6 +3,7 @@ import BalanceAdjustment from '../models/BalanceAdjustment.js';
 import Expense from '../models/Expense.js';
 import Payment from '../models/Payment.js';
 import Task from '../models/Task.js';
+import { sendBrevoEmail } from '../utils/email.js';
 
 // @desc    Get all members (Admin gets full detail; Members get basic list for selection/tasks)
 // @route   GET /api/members
@@ -93,6 +94,41 @@ export const createMember = async (req, res) => {
     });
 
     await newMember.save();
+    try {
+  await sendBrevoEmail({
+    to: newMember.email,
+    subject: '👋 Welcome to RoomMate Pro',
+    html: `
+      <div style="font-family:Arial;padding:25px">
+        <h2>Welcome ${newMember.name} 👋</h2>
+
+        <p>
+          Your RoomMate Pro account has been created successfully.
+        </p>
+
+        <p>
+          You can now login and check:
+        </p>
+
+        <ul>
+          <li>Room expenses</li>
+          <li>Your payments</li>
+          <li>Pending dues</li>
+          <li>Assigned tasks</li>
+        </ul>
+
+        <p>
+          Please use the login credentials provided by the Room Admin.
+        </p>
+      </div>
+    `,
+  });
+} catch (emailError) {
+  console.error(
+    '[Brevo] Welcome email failed:',
+    emailError.message
+  );
+}
 
     return res.status(201).json({
       success: true,
