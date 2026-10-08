@@ -3,6 +3,11 @@ import User from '../models/User.js';
 import Payment from '../models/Payment.js';
 import RoomSettings from '../models/RoomSettings.js';
 import { sendPushToUsers } from '../utils/fcm.js';
+import {
+  sendNewExpenseEmail,
+  sendFundZeroEmail,
+  sendDueEmail,
+} from '../utils/email.js';
 
 // @desc    Get expenses with filtering by month, category, paidBy, search
 // @route   GET /api/expenses
@@ -218,10 +223,89 @@ if (paymentSource === 'room_fund') {
       });
 
     await expense.save();
+    // ---------------------------------------------
+// BREVO EMAIL - ROOM FUND ZERO ALERT
+// ---------------------------------------------
+if (paymentSource === 'room_fund') {
+  try {
+    const currentPayments = await Payment.find({
+      monthKey,
+      isApproved: true,
+    });
+
+    const currentFund = currentPayments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
+      0
+    );
+
+    const currentFundExpenses = await Expense.find({
+      monthKey,
+      paymentSource: 'room_fund',
+    });
+
+    const currentUsedFund = currentFundExpenses.reduce(
+      (sum, item) => sum + Number(item.amount || 0),
+      0
+    );
+
+    const currentRemainingFund =
+      currentFund - currentUsedFund;
+
+    if (currentRemainingFund <= 0) {
+      const admin = await User.findOne({
+        role: 'admin',
+      }).select('name email');
+
+      await sendFundZeroEmail({
+        totalFund: currentFund,
+        usedFund: currentUsedFund,
+        admin,
+        monthKey,
+      });
+    }
+  } catch (emailError) {
+    console.error(
+      '[Brevo] Fund zero email failed:',
+      emailError.message
+    );
+  }
+}
 
     const populated = await Expense.findById(expense._id)
       .populate('paidBy', 'name avatar roomNo')
       .populate('splitAmong.user', 'name avatar roomNo');
+    // ---------------------------------------------
+// BREVO EMAIL - NEW EXPENSE
+// ---------------------------------------------
+try {
+  const emailMembers = await User.find({
+    role: 'member',
+    isActive: true,
+  }).select('name email');
+
+  const emailExpense = await Expense.findById(expense._id)
+    .populate('paidBy', 'name')
+    .populate('createdBy', 'name')
+    .populate('splitAmong.user', 'name');
+
+  await Promise.all(
+    emailMembers.map((member) =>
+      sendNewExpenseEmail({
+        member,
+        expense: emailExpense,
+        addedBy: {
+          name: req.user.name,
+        },
+        paidByName: emailExpense?.paidBy?.name,
+      })
+    )
+  );
+} catch (emailError) {
+  console.error(
+    '[Brevo] New expense email failed:',
+    emailError.message
+  );
+}
 
     const affectedUsers = resolvedSplit.map((item) => item.user).filter(Boolean);
      try {
