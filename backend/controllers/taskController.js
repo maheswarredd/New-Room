@@ -1,6 +1,7 @@
 import Task from '../models/Task.js';
 import RoomSettings from '../models/RoomSettings.js';
 import { sendPushToUsers } from '../utils/fcm.js';
+import { sendTaskAssignedEmail } from '../utils/email.js';
 
 // @desc    Get tasks (Admin gets all with filters; Member gets ONLY tasks assigned to them)
 // @route   GET /api/tasks
@@ -139,6 +140,29 @@ export const createTask = async (req, res) => {
     const populated = await Task.findById(task._id)
       .populate('assignedTo', 'name avatar roomNo')
       .populate('createdBy', 'name');
+    // ---------------------------------------------
+// BREVO EMAIL - NEW TASK ASSIGNED
+// ---------------------------------------------
+try {
+  const taskWithEmails = await Task.findById(task._id)
+    .populate('assignedTo', 'name email roomNo')
+    .populate('createdBy', 'name email');
+
+  await Promise.all(
+    (taskWithEmails?.assignedTo || []).map((member) =>
+      sendTaskAssignedEmail({
+        member,
+        task: taskWithEmails,
+        admin: taskWithEmails.createdBy,
+      })
+    )
+  );
+} catch (emailError) {
+  console.error(
+    '[Brevo] Task assignment email failed:',
+    emailError.message
+  );
+}
 
     await sendPushToUsers(assignees, {
       title: '📋 New Task Assigned',
