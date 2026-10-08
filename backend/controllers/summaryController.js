@@ -4,6 +4,7 @@ import Payment from '../models/Payment.js';
 import BalanceAdjustment from '../models/BalanceAdjustment.js';
 import RoomSettings from '../models/RoomSettings.js';
 import Task from '../models/Task.js';
+import { sendDueEmail } from '../utils/email.js';
 
 // Helper to get all months from expenses/payments or defaults
 export const getAvailableMonths = async (req, res) => {
