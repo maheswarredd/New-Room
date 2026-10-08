@@ -1,5 +1,6 @@
 import Expense from '../models/Expense.js';
 import User from '../models/User.js';
+import Payment from '../models/Payment.js';
 import RoomSettings from '../models/RoomSettings.js';
 import { sendPushToUsers } from '../utils/fcm.js';
 
@@ -110,7 +111,27 @@ export const createExpense = async (req, res) => {
     }
 
     // Determine who paid
-    const actualPaidBy = req.user.role === 'admin' && paidBy ? paidBy : req.user._id;
+    let actualPaidBy = req.user._id;
+   let paymentSource = 'member';
+
+ if (req.user.role === 'admin') {
+  if (paidBy === 'ADMIN_FUND') {
+    actualPaidBy = req.user._id;
+    paymentSource = 'room_fund';
+    } else if (paidBy) {
+    const selectedPayer = await User.findById(paidBy);
+
+     if (!selectedPayer) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected payer was not found.',
+       });
+       }
+
+     actualPaidBy = selectedPayer._id;
+     paymentSource = 'member';
+  }
+}
 
     // Calculate split among active members if 'equal'
     let resolvedSplit = [];
@@ -133,25 +154,68 @@ export const createExpense = async (req, res) => {
     const year = expenseDate.getFullYear();
     const month = String(expenseDate.getMonth() + 1).padStart(2, '0');
     const monthKey = `${year}-${month}`;
+    // ----------------------------------------------------
+// ROOM COMMON FUND VALIDATION
+// ----------------------------------------------------
+if (paymentSource === 'room_fund') {
+  // Total money paid by all members/admin records for this month
+  const payments = await Payment.find({
+    monthKey,
+    isApproved: true,
+  });
+
+  const totalFund = payments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0
+  );
+
+  // Previous expenses paid from Room Common Fund
+  const previousFundExpenses = await Expense.find({
+    monthKey,
+    paymentSource: 'room_fund',
+  });
+
+  const usedFund = previousFundExpenses.reduce(
+    (sum, expense) => sum + Number(expense.amount || 0),
+    0
+  );
+
+  const remainingFund = totalFund - usedFund;
+
+  if (numAmount > remainingFund) {
+    return res.status(400).json({
+      success: false,
+      message: `Insufficient Room Common Fund. Available ₹${remainingFund.toFixed(
+        2
+      )}, but ₹${numAmount.toFixed(2)} is required.`,
+      fund: {
+        totalFund,
+        usedFund,
+        remainingFund,
+      },
+    });
+  }
+}
 
     let photoUrl = receiptPhoto || '';
     if (req.file) {
       photoUrl = `/uploads/${req.file.filename}`;
     }
 
-    const expense = new Expense({
+     const expense = new Expense({
       title: title.trim(),
       amount: numAmount,
       category,
       date: expenseDate,
       monthKey,
       paidBy: actualPaidBy,
+      paymentSource,
       splitType: splitType || 'equal',
       splitAmong: resolvedSplit,
       description: description ? description.trim() : '',
       receiptPhoto: photoUrl,
       createdBy: req.user._id,
-    });
+      });
 
     await expense.save();
 
@@ -160,10 +224,25 @@ export const createExpense = async (req, res) => {
       .populate('splitAmong.user', 'name avatar roomNo');
 
     const affectedUsers = resolvedSplit.map((item) => item.user).filter(Boolean);
-    await sendPushToUsers(affectedUsers, {
+     try {
+    await sendPushToUsers(
+     affectedUsers,
+    {
       title: '🧾 New Expense Added',
       body: `${title.trim()} • ₹${numAmount.toFixed(2)} • Your split is included`,
-    }, { type: 'expense', expenseId: expense._id.toString(), url: '/member/expenses' });
+    },
+    {
+      type: 'expense',
+      expenseId: expense._id.toString(),
+      url: '/member/expenses',
+      }
+     );
+     } catch (notificationError) {
+     console.error(
+     'Expense notification failed:',
+      notificationError.message
+      );
+      }
 
     return res.status(201).json({
       success: true,
