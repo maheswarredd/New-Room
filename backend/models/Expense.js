@@ -33,6 +33,12 @@ const expenseSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    paymentSource: {
+     type: String,
+     enum: ['member', 'room_fund'],
+     default: 'member',
+     index: true,
+    },
     splitType: {
       type: String,
       enum: ['equal', 'custom', 'single'],
