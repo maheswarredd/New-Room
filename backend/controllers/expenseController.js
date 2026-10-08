@@ -8,6 +8,9 @@ import {
   sendFundZeroEmail,
   sendDueEmail,
 } from '../utils/email.js';
+import {
+  notifyMemberDue,
+} from '../utils/financialNotifications.js';
 
 // @desc    Get expenses with filtering by month, category, paidBy, search
 // @route   GET /api/expenses
