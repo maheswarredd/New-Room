@@ -1,6 +1,26 @@
 import React from 'react';
 import { X, ExternalLink } from 'lucide-react';
 
+const API_URL = (import.meta.env.VITE_API_URL || '')
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '');
+
+const getPhotoUrl = (url) => {
+  if (!url) return '';
+
+  // Keep full URLs and browser-generated URLs unchanged.
+  if (/^(https?:|data:|blob:)/i.test(url)) {
+    return url;
+  }
+
+  // Convert backend upload paths into complete URLs.
+  if (url.startsWith('/uploads/')) {
+    return API_URL ? `${API_URL}${url}` : url;
+  }
+
+  return url;
+};
+
 export default function PhotoModal({ isOpen, photoUrl, title = 'Photo Preview', onClose }) {
   if (!isOpen || !photoUrl) return null;
 
