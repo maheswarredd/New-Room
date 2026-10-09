@@ -523,160 +523,180 @@ const handleEditSubmit = async (e) => {
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium">
-                {expenses.map((expense) => {
-                  const expenseDate = new Date(expense.date).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  });
+             <tbody className="divide-y divide-slate-100 font-medium">
+  {expenses.map((expense) => {
+    const expenseDate = new Date(expense.date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
 
-                  return (
-                    <tr key={expense._id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                        {expenseDate}
-                      </td>
+    return (
+      <tr
+        key={expense._id}
+        className="hover:bg-slate-50/60 transition"
+      >
+        {/* Date */}
+        <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+          {expenseDate}
+        </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900 text-sm">{expense.title}</div>
-                        {expense.description && (
-                          <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
-                            {expense.description}
-                          </p>
-                        )}
-                      </td>
+        {/* Title and Details */}
+        <td className="py-3.5 px-4">
+          <div className="font-bold text-slate-900 text-sm">
+            {expense.title}
+          </div>
 
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                            categoryBadgeColors[expense.category] || 'bg-slate-100 text-slate-800'
-                          }`}
-                        >
-                          {categoryLabels[expense.category] || expense.category}
-                        </span>
-                      </td>
+          {expense.description && (
+            <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
+              {expense.description}
+            </p>
+          )}
+        </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-200 text-[10px] font-bold flex items-center justify-center overflow-hidden">
-                            {expense.paidBy?.avatar ? (
-                              <img
-                                src={expense.paidBy.avatar}
-                                alt={expense.paidBy.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              expense.paidBy?.name?.charAt(0) || 'P'
-                            )}
-                          </div>
-                          <span className="font-semibold text-slate-800">
-                            {expense.paidBy?.name || 'Admin'}
-                          </span>
-                        </div>
-                      </td>
+        {/* Category */}
+        <td className="py-3.5 px-4">
+          <span
+            className={`inline-block text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+              categoryBadgeColors[expense.category] ||
+              'bg-slate-100 text-slate-800'
+            }`}
+          >
+            {categoryLabels[expense.category] || expense.category}
+          </span>
+        </td>
 
-                      <td className="py-3.5 px-4">
-                        <span className="font-extrabold text-sm text-slate-900">
-                          ₹{expense.amount.toLocaleString()}
-                        </span>
-                      </td>
+        {/* Paid By */}
+        <td className="py-3.5 px-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-slate-200 text-[10px] font-bold flex items-center justify-center overflow-hidden">
+              {expense.paidBy?.avatar ? (
+                <img
+                  src={expense.paidBy.avatar}
+                  alt={expense.paidBy.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                expense.paidBy?.name?.charAt(0) || 'P'
+              )}
+            </div>
 
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {expense.splitType === 'equal' ? (
-                          <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">
-                            Equally split
-                          </span>
-                        ) : (
-                          <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-semibold">
-                            Custom split ({expense.splitAmong?.length} members)
-                          </span>
-                        )}
-                      </td>
+            <span className="font-semibold text-slate-800">
+              {expense.paidBy?.name || 'Admin'}
+            </span>
+          </div>
+        </td>
 
-                      <td className="py-3.5 px-4">
-                        {expense.receiptPhoto ? (
-                          <button
-                            onClick={() =>
-                              setPhotoViewer({
-                                isOpen: true,
-                                url: expense.receiptPhoto,
-                                title: `Receipt for ${expense.title}`,
-                              })
-                            }
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
-                          >
-                            <Image className="w-3.5 h-3.5" />
-                            <span>View Bill</span>
-                          </button>
-                        ) : (
-                          <span className="text-slate-400 text-[11px]">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-  <span
-    className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-      expense.approvalStatus === 'pending'
-        ? 'bg-amber-100 text-amber-800'
-        : expense.approvalStatus === 'rejected'
-          ? 'bg-rose-100 text-rose-800'
-          : 'bg-emerald-100 text-emerald-800'
-    }`}
-  >
-    {(expense.approvalStatus || 'approved').toUpperCase()}
-  </span>
-</td>
+        {/* Amount */}
+        <td className="py-3.5 px-4">
+          <span className="font-extrabold text-sm text-slate-900">
+            ₹{expense.amount.toLocaleString()}
+          </span>
+        </td>
 
-<td className="py-3.5 px-4 text-right">
-  <div className="flex items-center justify-end gap-1">
-    {expense.approvalStatus === 'pending' && (
-      <>
-        <button
-          onClick={() => handleReviewExpense(expense, 'approve')}
-          disabled={actionLoading}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[10px] font-bold"
-          title="Approve expense"
-        >
-          <CheckCircle className="w-3.5 h-3.5" />
-          Accept
-        </button>
+        {/* Split Detail */}
+        <td className="py-3.5 px-4 text-slate-600">
+          {expense.splitType === 'equal' ? (
+            <span className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">
+              Equally split
+            </span>
+          ) : (
+            <span className="text-[11px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md font-semibold">
+              Custom split ({expense.splitAmong?.length} members)
+            </span>
+          )}
+        </td>
 
-        <button
-          onClick={() => handleReviewExpense(expense, 'reject')}
-          disabled={actionLoading}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 text-[10px] font-bold"
-          title="Reject expense"
-        >
-          <XCircle className="w-3.5 h-3.5" />
-          Reject
-        </button>
-      </>
-    )}
+        {/* Bill Photo */}
+        <td className="py-3.5 px-4">
+          {expense.receiptPhoto ? (
+            <button
+              onClick={() =>
+                setPhotoViewer({
+                  isOpen: true,
+                  url: expense.receiptPhoto,
+                  title: `Receipt for ${expense.title}`,
+                })
+              }
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline"
+            >
+              <Image className="w-3.5 h-3.5" />
+              <span>View Bill</span>
+            </button>
+          ) : (
+            <span className="text-slate-400 text-[11px]">—</span>
+          )}
+        </td>
 
-    {/* Existing Edit and Delete buttons ikkada alage undali */}
-                      
+        {/* Approval Status */}
+        <td className="py-3.5 px-4">
+          <span
+            className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+              expense.approvalStatus === 'pending'
+                ? 'bg-amber-100 text-amber-800'
+                : expense.approvalStatus === 'rejected'
+                  ? 'bg-rose-100 text-rose-800'
+                  : 'bg-emerald-100 text-emerald-800'
+            }`}
+          >
+            {(expense.approvalStatus || 'approved').toUpperCase()}
+          </span>
+        </td>
 
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenEdit(expense)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDelete(expense)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
+        {/* Actions */}
+        <td className="py-3.5 px-4 text-right">
+          <div className="flex items-center justify-end gap-1">
+            {expense.approvalStatus === 'pending' && (
+              <>
+                <button
+                  onClick={() =>
+                    handleReviewExpense(expense, 'approve')
+                  }
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[10px] font-bold"
+                  title="Approve expense"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Accept
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleReviewExpense(expense, 'reject')
+                  }
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 text-[10px] font-bold"
+                  title="Reject expense"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  Reject
+                </button>
+              </>
+            )}
+
+            {/* Edit */}
+            <button
+              onClick={() => handleOpenEdit(expense)}
+              className="p-1 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100"
+              title="Edit"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Delete */}
+            <button
+              onClick={() => handleOpenDelete(expense)}
+              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100"
+              title="Delete"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
             </table>
           </div>
         )}
