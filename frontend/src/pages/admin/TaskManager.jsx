@@ -492,8 +492,15 @@ export default function TaskManager() {
                   <Calendar className="w-3 h-3" />
                   <span>
                     {task.dueDate
-                      ? `Due ${new Date(task.dueDate).toLocaleDateString()}`
-                      : `Created ${new Date(task.assignedDate).toLocaleDateString()}`}
+                     ? `Due ${new Date(task.dueDate).toLocaleDateString()}`
+                     : `Created ${new Date(task.createdAt || task.assignedDate).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                     minute: '2-digit',
+                     hour12: true,
+                    })}`}
                   </span>
                 </div>
 
