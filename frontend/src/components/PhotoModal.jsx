@@ -31,7 +31,7 @@ export default function PhotoModal({ isOpen, photoUrl, title = 'Photo Preview', 
           <h3 className="text-base font-semibold text-slate-800">{title}</h3>
           <div className="flex items-center gap-2">
             <a
-              href={photoUrl}
+              href={getPhotoUrl(photoUrl)}
               target="_blank"
               rel="noreferrer"
               className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-slate-100 transition"
@@ -50,7 +50,7 @@ export default function PhotoModal({ isOpen, photoUrl, title = 'Photo Preview', 
 
         <div className="p-4 flex items-center justify-center bg-slate-950 overflow-auto">
           <img
-            src={photoUrl}
+            src={getPhotoUrl(photoUrl)}
             alt={title}
             className="max-h-[70vh] w-auto max-w-full object-contain rounded-lg"
           />
