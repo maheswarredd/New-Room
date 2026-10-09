@@ -25,12 +25,21 @@ export const calculateMemberDue = async (
     };
 
   const expenses = await Expense.find({
-    monthKey,
-  });
+  monthKey,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
 
-  const payments = await Payment.find({
-    monthKey,
-  });
+const payments = await Payment.find({
+  monthKey,
+  isApproved: true,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
 
   const adjustments = await BalanceAdjustment.find({
     monthKey,
@@ -107,12 +116,21 @@ export const calculateMemberDue = async (
     );
 
   const previousExpenses = await Expense.find({
-    monthKey: { $lt: monthKey },
-  });
+  monthKey: { $lt: monthKey },
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
 
-  const previousPayments = await Payment.find({
-    monthKey: { $lt: monthKey },
-  });
+const previousPayments = await Payment.find({
+  monthKey: { $lt: monthKey },
+  isApproved: true,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
 
   const previousAdjustments =
     await BalanceAdjustment.find({
