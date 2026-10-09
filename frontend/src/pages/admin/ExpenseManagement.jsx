@@ -16,6 +16,8 @@ import {
   Users,
   X,
   FileText,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 
 export default function ExpenseManagement() {
@@ -245,6 +247,37 @@ export default function ExpenseManagement() {
     }
   };
 
+  const handleReviewExpense = async (expense, action) => {
+  const reason =
+    action === 'reject'
+      ? (window.prompt('Rejection reason (optional):') || '')
+      : '';
+
+  try {
+    setActionLoading(true);
+
+    const res = await api.put(
+      `/expenses/${expense._id}/review`,
+      { action, reason }
+    );
+
+    if (res.data.success) {
+      showToast(res.data.message, 'success');
+      await fetchExpenses();
+      await fetchFundSummary();
+    }
+  } catch (err) {
+    showToast(
+      err.response?.data?.message || 'Could not review expense',
+      'error'
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+// Save Edit
+const handleEditSubmit = async (e) => {
   // Save Edit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -486,6 +519,7 @@ export default function ExpenseManagement() {
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Split Detail</th>
                   <th className="py-3 px-4">Bill Photo</th>
+                  <th className="py-3 px-4">Approval</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -578,6 +612,48 @@ export default function ExpenseManagement() {
                           <span className="text-slate-400 text-[11px]">—</span>
                         )}
                       </td>
+                      <td className="py-3.5 px-4">
+  <span
+    className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+      expense.approvalStatus === 'pending'
+        ? 'bg-amber-100 text-amber-800'
+        : expense.approvalStatus === 'rejected'
+          ? 'bg-rose-100 text-rose-800'
+          : 'bg-emerald-100 text-emerald-800'
+    }`}
+  >
+    {(expense.approvalStatus || 'approved').toUpperCase()}
+  </span>
+</td>
+
+<td className="py-3.5 px-4 text-right">
+  <div className="flex items-center justify-end gap-1">
+    {expense.approvalStatus === 'pending' && (
+      <>
+        <button
+          onClick={() => handleReviewExpense(expense, 'approve')}
+          disabled={actionLoading}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-[10px] font-bold"
+          title="Approve expense"
+        >
+          <CheckCircle className="w-3.5 h-3.5" />
+          Accept
+        </button>
+
+        <button
+          onClick={() => handleReviewExpense(expense, 'reject')}
+          disabled={actionLoading}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 text-[10px] font-bold"
+          title="Reject expense"
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          Reject
+        </button>
+      </>
+    )}
+
+    {/* Existing Edit and Delete buttons ikkada alage undali */}
+                      
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
