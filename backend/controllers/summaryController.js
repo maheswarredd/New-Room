@@ -44,13 +44,25 @@ export const getMonthlySummary = async (req, res) => {
     };
 
     // Load expenses for target month
-    const expenses = await Expense.find({ monthKey: targetMonth })
-      .populate('paidBy', 'name avatar roomNo')
-      .populate('splitAmong.user', 'name avatar roomNo');
+    const expenses = await Expense.find({
+  monthKey: targetMonth,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+})
+  .populate('paidBy', 'name avatar roomNo')
+  .populate('splitAmong.user', 'name avatar roomNo');
 
-    // Load payments for target month
-    const payments = await Payment.find({ monthKey: targetMonth })
-      .populate('fromUser', 'name avatar roomNo');
+const payments = await Payment.find({
+  monthKey: targetMonth,
+  isApproved: true,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+})
+  .populate('fromUser', 'name avatar roomNo');
 
     // Load adjustments for target month
     const adjustments = await BalanceAdjustment.find({ monthKey: targetMonth });
@@ -91,8 +103,22 @@ export const getMonthlySummary = async (req, res) => {
 
     // Calculate carry forward from all previous months up to targetMonth
     // (A month key like '2026-09' is lexicographically less than '2026-10')
-    const prevExpenses = await Expense.find({ monthKey: { $lt: targetMonth } });
-    const prevPayments = await Payment.find({ monthKey: { $lt: targetMonth } });
+    const prevExpenses = await Expense.find({
+    monthKey: { $lt: targetMonth },
+     $or: [
+     { approvalStatus: 'approved' },
+     { approvalStatus: { $exists: false } },
+      ],
+      });
+
+const prevPayments = await Payment.find({
+  monthKey: { $lt: targetMonth },
+  isApproved: true,
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+    ],
+    });
     const prevAdjustments = await BalanceAdjustment.find({ monthKey: { $lt: targetMonth } });
 
     // Build per-member financial ledger
