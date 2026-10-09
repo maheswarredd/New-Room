@@ -291,6 +291,42 @@ export default function MemberDashboard() {
                 {currency}{(statement?.roomSummary?.totalRoomExpenses || 0).toLocaleString()}
               </span>
             </div>
+            {/* Total Fund */}
+          <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-between">
+          <span className="font-semibold text-slate-600">
+           Total Fund:
+           </span>
+
+          <span className="font-extrabold text-slate-900">
+          {currency}
+          {(statement?.roomSummary?.totalRoomFund || 0).toLocaleString()}
+          </span>
+          </div>
+
+          {/* Used Fund */}
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-between">
+          <span className="font-semibold text-slate-600">
+           Used Fund:
+          </span>
+
+         <span className="font-extrabold text-slate-900">
+          {currency}
+         {(statement?.roomSummary?.usedRoomFund || 0).toLocaleString()}
+         </span>
+         </div>
+
+         {/* Remaining Fund */}
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-between">
+        <span className="font-semibold text-slate-600">
+         Remaining Fund:
+        </span>
+
+        <span className="font-extrabold text-slate-900">
+        {currency}
+        {(statement?.roomSummary?.remainingRoomFund || 0).toLocaleString()}
+        </span>
+        </div>
+            
 
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
               <span className="font-semibold text-slate-600">Active Room Members:</span>
