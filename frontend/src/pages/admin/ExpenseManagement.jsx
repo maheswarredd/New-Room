@@ -277,8 +277,6 @@ export default function ExpenseManagement() {
 };
 
 // Save Edit
-const handleEditSubmit = async (e) => {
-  // Save Edit
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
