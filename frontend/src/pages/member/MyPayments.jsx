@@ -288,7 +288,7 @@ export default function MyPayments() {
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Date *</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
