@@ -146,6 +146,110 @@ try {
   }
 };
 
+export const reviewPayment = async (req, res) => {
+  try {
+    const { action, reason = '' } = req.body;
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Action must be approve or reject',
+      });
+    }
+
+    const payment = await Payment.findById(req.params.id)
+      .populate('fromUser', 'name email');
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment not found',
+      });
+    }
+
+    if (payment.approvalStatus !== 'pending') {
+      return res.status(409).json({
+        success: false,
+        message: 'This payment has already been reviewed',
+      });
+    }
+
+    payment.approvalStatus =
+      action === 'approve' ? 'approved' : 'rejected';
+
+    payment.isApproved = action === 'approve';
+
+    payment.rejectionReason =
+      action === 'reject' ? String(reason).trim() : '';
+
+    payment.reviewedBy = req.user._id;
+    payment.reviewedAt = new Date();
+
+    await payment.save();
+
+    if (action === 'reject') {
+      const admin = await User.findById(req.user._id)
+        .select('name email');
+
+      const { sendAdminRejectionEmail } =
+        await import('../utils/email.js');
+
+      await sendAdminRejectionEmail({
+        admin,
+        member: payment.fromUser,
+        itemType: 'Payment',
+        title: payment.paymentType,
+        amount: payment.amount,
+        reason: payment.rejectionReason,
+        date: payment.date,
+      });
+    } else {
+      try {
+        await notifyMemberDue({
+          memberId: payment.fromUser._id,
+          monthKey: payment.monthKey,
+        });
+      } catch (error) {
+        console.error('Due notification failed:', error.message);
+      }
+    }
+
+    await sendPushToUsers(
+      [payment.fromUser._id],
+      {
+        title: action === 'approve'
+          ? 'Payment approved'
+          : 'Payment rejected',
+        body: action === 'approve'
+          ? 'Your payment has been approved.'
+          : `Your payment has been rejected.${
+              payment.rejectionReason
+                ? ` Reason: ${payment.rejectionReason}`
+                : ''
+            }`,
+      },
+      {
+        type: `payment_${action === 'approve' ? 'approved' : 'rejected'}`,
+        paymentId: payment._id.toString(),
+        url: '/member/payments',
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: `Payment ${
+        action === 'approve' ? 'approved' : 'rejected'
+      }`,
+      payment,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // @desc    Delete payment (Admin only)
 // @route   DELETE /api/payments/:id
 // @access  Private (Admin)
