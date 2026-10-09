@@ -238,6 +238,7 @@ export default function MyExpenses() {
                   <th className="py-3 px-4">Paid By</th>
                   <th className="py-3 px-4">Amount</th>
                   <th className="py-3 px-4">Receipt</th>
+                  <th className="py-3 px-4">Approval Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -297,6 +298,17 @@ export default function MyExpenses() {
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
+                      <td className="py-3 px-4">
+                      <span>
+                      {(expense.approvalStatus || 'approved').toUpperCase()}
+                      </span>
+
+                      {expense.rejectionReason && (
+                      <p className="text-[10px] text-rose-600 mt-1">
+                       Reason: {expense.rejectionReason}
+                       </p>
+                       )}
+                     </td>
                     </tr>
                   );
                 })}
