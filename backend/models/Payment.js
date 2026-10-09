@@ -50,9 +50,28 @@ const paymentSchema = new mongoose.Schema(
       ref: 'User',
     },
     isApproved: {
-      type: Boolean,
-      default: true,
-    },
+  type: Boolean,
+  default: true,
+  index: true,
+  },
+  approvalStatus: {
+   type: String,
+   enum: ['pending', 'approved', 'rejected'],
+   default: 'approved',
+   index: true,
+   },
+  rejectionReason: {
+   type: String,
+   default: '',
+   trim: true,
+ },
+  reviewedBy: {
+   type: mongoose.Schema.Types.ObjectId,
+   ref: 'User',
+  },
+ reviewedAt: {
+  type: Date,
+ },
   },
   {
     timestamps: true,
