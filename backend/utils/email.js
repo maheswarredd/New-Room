@@ -496,7 +496,6 @@ export const sendFundZeroEmail = async ({
     html,
   });
 };
-
 export const sendPaymentEmail = async ({
   member,
   amount,
@@ -511,7 +510,6 @@ export const sendPaymentEmail = async ({
     title: '💳 Payment Recorded',
     subtitle: 'Room payment confirmation',
     type: 'payment',
-
     content: `
       <p>
         Hello <strong>${escapeHtml(member.name)}</strong>,
@@ -528,7 +526,6 @@ export const sendPaymentEmail = async ({
         border-radius:12px;
         margin:20px 0;
       ">
-
         <p>
           <strong>Amount:</strong>
           ${money(amount)}
@@ -554,7 +551,6 @@ export const sendPaymentEmail = async ({
             ? `<p><strong>Notes:</strong><br/>${escapeHtml(notes)}</p>`
             : ''
         }
-
       </div>
     `,
   });
@@ -564,7 +560,10 @@ export const sendPaymentEmail = async ({
     subject: `💳 Payment Recorded - ${money(amount)}`,
     html,
   });
-  export const sendAdminRejectionEmail = async ({
+};
+
+// Admin rejection email — separate function, NOT inside sendPaymentEmail
+export const sendAdminRejectionEmail = async ({
   admin,
   member,
   itemType,
@@ -584,11 +583,11 @@ export const sendPaymentEmail = async ({
 
       <p>
         A member ${escapeHtml(member?.name || 'member')}
-        submitted a ${escapeHtml(itemType.toLowerCase())}
+        submitted a ${escapeHtml((itemType || 'transaction').toLowerCase())}
         that has been rejected.
       </p>
 
-      <p><strong>Details:</strong> ${escapeHtml(title || itemType)}</p>
+      <p><strong>Details:</strong> ${escapeHtml(title || itemType || 'Transaction')}</p>
       <p><strong>Amount:</strong> ${money(amount)}</p>
       <p><strong>Date:</strong> ${formatDate(date)}</p>
       <p><strong>Reason:</strong> ${escapeHtml(reason || 'Not provided')}</p>
@@ -597,8 +596,8 @@ export const sendPaymentEmail = async ({
 
   return sendBrevoEmail({
     to: admin.email,
-    subject: `Rejected ${itemType}: ${title || money(amount)}`,
+    subject: `Rejected ${itemType || 'Transaction'}: ${title || money(amount)}`,
     html,
   });
 };
-};
+
