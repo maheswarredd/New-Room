@@ -3,6 +3,7 @@ import {
   getPayments,
   createPayment,
   deletePayment,
+  reviewPayment,
 } from '../controllers/paymentController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
