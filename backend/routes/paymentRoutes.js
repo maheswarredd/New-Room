@@ -13,6 +13,8 @@ router.use(protect);
 
 router.get('/', getPayments);
 router.post('/', upload.single('proof'), createPayment);
+// NEW: Admin-only review endpoint
+router.put('/:id/review', adminOnly, reviewPayment);
 router.delete('/:id', adminOnly, deletePayment);
 
 export default router;
