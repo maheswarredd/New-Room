@@ -72,21 +72,24 @@ export const createPayment = async (req, res) => {
       photoUrl = `/uploads/${req.file.filename}`;
     }
 
-    const payment = new Payment({
-      fromUser: actualFromUser,
-      amount: parseFloat(amount),
-      paymentType: paymentType || 'rent',
-      paymentMethod: paymentMethod || 'upi',
-      date: paymentDate,
-      monthKey,
-      proofPhoto: photoUrl,
-      notes: notes ? notes.trim() : '',
-      recordedBy: req.user._id,
-      isApproved: true,
-    });
+const approved = req.user.role === 'admin';
 
-    await payment.save();
-    try {
+const payment = new Payment({
+fromUser: actualFromUser,
+amount: parseFloat(amount),
+paymentType: paymentType || 'rent',
+paymentMethod: paymentMethod || 'upi',
+date: paymentDate,
+monthKey,
+proofPhoto: photoUrl,
+notes: notes ? notes.trim() : '',
+recordedBy: req.user._id,
+isApproved: approved,
+approvalStatus: approved ? 'approved' : 'pending',
+});
+
+await payment.save();
+ try {
   await sendMemberDueNotification({
     member: actualFromUser,
     monthKey,
