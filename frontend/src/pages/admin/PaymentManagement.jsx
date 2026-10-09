@@ -255,11 +255,14 @@ export default function PaymentManagement() {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {payments.map((p) => {
-                  const pDate = new Date(p.date).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  });
+                  const pDate = new Date(p.createdAt || p.date).toLocaleString('en-IN', {
+                   day: '2-digit',
+                   month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                 minute: '2-digit',
+                 hour12: true,
+                 });
 
                   return (
                     <tr key={p._id} className="hover:bg-slate-50/60 transition">
