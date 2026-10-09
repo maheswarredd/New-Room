@@ -218,6 +218,10 @@ if (paymentSource === 'room_fund') {
       monthKey,
       paidBy: actualPaidBy,
       paymentSource,
+       // NEW: Admin expense approved; member expense pending
+      approvalStatus: req.user.role === 'admin'
+      ? 'approved'
+      : 'pending',
       splitType: splitType || 'equal',
       splitAmong: resolvedSplit,
       description: description ? description.trim() : '',
