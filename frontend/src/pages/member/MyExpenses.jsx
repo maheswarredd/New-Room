@@ -247,7 +247,14 @@ export default function MyExpenses() {
                   return (
                     <tr key={expense._id} className="hover:bg-slate-50/60 transition">
                       <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                        {new Date(expense.date).toLocaleDateString()}
+                        {new Date(expense.createdAt || expense.date).toLocaleString('en-IN', {
+                         day: '2-digit',
+                         month: 'short',
+                         year: 'numeric',
+                         hour: '2-digit',
+                         minute: '2-digit',
+                         hour12: true,
+                         })}
                       </td>
 
                       <td className="py-3 px-4">
