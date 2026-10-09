@@ -563,6 +563,7 @@ export const sendPaymentEmail = async ({
 };
 
 // Admin rejection email — separate function, NOT inside sendPaymentEmail
+// Send rejection email to the member whose payment or expense was rejected.
 export const sendAdminRejectionEmail = async ({
   admin,
   member,
@@ -572,32 +573,59 @@ export const sendAdminRejectionEmail = async ({
   reason,
   date,
 }) => {
-  if (!admin?.email) return false;
+  if (!member?.email) {
+    console.warn(
+      '[Brevo] Rejection email skipped: member email is missing.'
+    );
+    return false;
+  }
+
+  const safeItemType = itemType || 'Transaction';
 
   const html = createEmailHtml({
-    title: `Rejected ${itemType}`,
+    title: `${safeItemType} Rejected`,
     subtitle: 'RoomMate Pro approval update',
     type: 'expense',
     content: `
-      <p>Hello <strong>${escapeHtml(admin.name || 'Admin')}</strong>,</p>
-
       <p>
-        A member ${escapeHtml(member?.name || 'member')}
-        submitted a ${escapeHtml((itemType || 'transaction').toLowerCase())}
-        that has been rejected.
+        Hello <strong>${escapeHtml(member.name || 'Member')}</strong>,
       </p>
 
-      <p><strong>Details:</strong> ${escapeHtml(title || itemType || 'Transaction')}</p>
-      <p><strong>Amount:</strong> ${money(amount)}</p>
-      <p><strong>Date:</strong> ${formatDate(date)}</p>
-      <p><strong>Reason:</strong> ${escapeHtml(reason || 'Not provided')}</p>
+      <p>
+        Your ${escapeHtml(safeItemType.toLowerCase())}
+        has been rejected by the administrator.
+      </p>
+
+      <div style="background:#fef2f2;border:1px solid #fecaca;padding:18px;border-radius:12px;margin:18px 0;">
+        <p>
+          <strong>Details:</strong>
+          ${escapeHtml(title || safeItemType)}
+        </p>
+
+        <p><strong>Amount:</strong> ${money(amount)}</p>
+
+        <p><strong>Date:</strong> ${formatDate(date)}</p>
+
+        <p>
+          <strong>Rejected by:</strong>
+          ${escapeHtml(admin?.name || 'Admin')}
+        </p>
+
+        <p>
+          <strong>Reason:</strong>
+          ${escapeHtml(reason || 'No reason provided')}
+        </p>
+      </div>
+
+      <p>
+        If you think this was a mistake, please contact the administrator.
+      </p>
     `,
   });
 
   return sendBrevoEmail({
-    to: admin.email,
-    subject: `Rejected ${itemType || 'Transaction'}: ${title || money(amount)}`,
+    to: member.email,
+    subject: `${safeItemType} Rejected: ${title || money(amount)}`,
     html,
   });
 };
-
