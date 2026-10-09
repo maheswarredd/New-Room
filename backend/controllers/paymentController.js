@@ -51,9 +51,20 @@ export const getPayments = async (req, res) => {
 // @access  Private
 export const createPayment = async (req, res) => {
   try {
-    const { fromUser, amount, paymentType, paymentMethod, date, proofPhoto, notes } = req.body;
+    const {
+      fromUser,
+      amount,
+      paymentType,
+      paymentMethod,
+      date,
+      proofPhoto,
+      notes,
+    } = req.body;
 
-    const actualFromUser = req.user.role === 'admin' && fromUser ? fromUser : req.user._id;
+    const actualFromUser =
+      req.user.role === 'admin' && fromUser
+        ? fromUser
+        : req.user._id;
 
     if (!amount || parseFloat(amount) <= 0) {
       return res.status(400).json({
@@ -72,77 +83,90 @@ export const createPayment = async (req, res) => {
       photoUrl = `/uploads/${req.file.filename}`;
     }
 
-const approved = req.user.role === 'admin';
+    // Payments entered by admins are approved immediately.
+    // Member-submitted payments remain pending until an admin reviews them.
+    const approved = req.user.role === 'admin';
 
-const payment = new Payment({
-fromUser: actualFromUser,
-amount: parseFloat(amount),
-paymentType: paymentType || 'rent',
-paymentMethod: paymentMethod || 'upi',
-date: paymentDate,
-monthKey,
-proofPhoto: photoUrl,
-notes: notes ? notes.trim() : '',
-recordedBy: req.user._id,
-isApproved: approved,
-approvalStatus: approved ? 'approved' : 'pending',
-});
+    const payment = new Payment({
+      fromUser: actualFromUser,
+      amount: parseFloat(amount),
+      paymentType: paymentType || 'rent',
+      paymentMethod: paymentMethod || 'upi',
+      date: paymentDate,
+      monthKey,
+      proofPhoto: photoUrl,
+      notes: notes ? notes.trim() : '',
+      recordedBy: req.user._id,
+      isApproved: approved,
+      approvalStatus: approved ? 'approved' : 'pending',
+    });
 
-await payment.save();
- try {
-  await sendMemberDueNotification({
-    member: actualFromUser,
-    monthKey,
-    pendingDue,
-  });
-} catch (error) {
-  console.error(
-    '[Brevo] Payment due update email failed:',
-    error.message
-  );
-}
+    await payment.save();
 
-return res.status(201).json({
-  success: true,
-  payment,
-});
+    const populated = await Payment.findById(payment._id)
+      .populate('fromUser', 'name email avatar roomNo')
+      .populate('recordedBy', 'name');
 
-    const populated = await Payment.findById(payment._id).populate('fromUser', 'name avatar roomNo');
-    // ---------------------------------------------
-// BREVO EMAIL - PAYMENT RECORDED
-// ---------------------------------------------
-try {
-  const paymentWithUser = await Payment.findById(payment._id)
-    .populate('fromUser', 'name email roomNo')
-    .populate('recordedBy', 'name');
+    // Only approved payments should affect due notifications and trigger
+    // the payment-recorded email.
+    if (approved) {
+      try {
+        await notifyMemberDue({
+          memberId: actualFromUser,
+          monthKey,
+        });
+      } catch (error) {
+        console.error('Due notification failed:', error.message);
+      }
 
-  await sendPaymentEmail({
-    member: paymentWithUser?.fromUser,
-    amount: paymentWithUser?.amount,
-    paymentMethod: paymentWithUser?.paymentMethod,
-    paymentType: paymentWithUser?.paymentType,
-    notes: paymentWithUser?.notes,
-    recordedBy: paymentWithUser?.recordedBy || req.user,
-  });
-} catch (emailError) {
-  console.error(
-    '[Brevo] Payment email failed:',
-    emailError.message
-  );
-}
+      try {
+        await sendPaymentEmail({
+          member: populated?.fromUser,
+          amount: populated?.amount,
+          paymentMethod: populated?.paymentMethod,
+          paymentType: populated?.paymentType,
+          notes: populated?.notes,
+          recordedBy: populated?.recordedBy || req.user,
+        });
+      } catch (emailError) {
+        console.error(
+          '[Brevo] Payment email failed:',
+          emailError.message
+        );
+      }
+    }
 
-    await sendPushToUsers([actualFromUser], {
-      title: '💳 Payment Recorded',
-      body: `₹${parseFloat(amount).toFixed(2)} payment recorded successfully`,
-    }, { type: 'payment', paymentId: payment._id.toString(), url: '/member/payments' });
+    try {
+      await sendPushToUsers(
+        [actualFromUser],
+        {
+          title: approved ? '💳 Payment Recorded' : '💳 Payment Submitted',
+          body: approved
+            ? `₹${parseFloat(amount).toFixed(2)} payment recorded successfully`
+            : `Your payment of ₹${parseFloat(amount).toFixed(2)} was submitted for admin approval.`,
+        },
+        {
+          type: approved ? 'payment' : 'payment_pending',
+          paymentId: payment._id.toString(),
+          url: '/member/payments',
+        }
+      );
+    } catch (notificationError) {
+      console.error('Payment push notification failed:', notificationError.message);
+    }
 
     return res.status(201).json({
       success: true,
-      message: 'Payment recorded successfully',
+      message: approved
+        ? 'Payment recorded successfully'
+        : 'Payment submitted for admin approval',
       payment: populated,
     });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
