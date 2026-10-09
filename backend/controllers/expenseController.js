@@ -230,6 +230,9 @@ if (paymentSource === 'room_fund') {
       });
 
     await expense.save();
+    if (expense.approvalStatus === 'approved') {
+  // Existing due notifications and financial side effects
+}
     // STEP 12 — Due email notification
     try {
   const affectedMemberIds = resolvedSplit
@@ -370,6 +373,130 @@ try {
 // @desc    Update expense
 // @route   PUT /api/expenses/:id
 // @access  Private
+// Admin-only approve/reject endpoint.
+export const reviewExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, reason = '' } = req.body;
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required',
+      });
+    }
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Action must be approve or reject',
+      });
+    }
+
+    const expense = await Expense.findById(id)
+      .populate('createdBy', 'name email');
+
+    if (!expense) {
+      return res.status(404).json({
+        success: false,
+        message: 'Expense not found',
+      });
+    }
+
+    if (expense.approvalStatus !== 'pending') {
+      return res.status(409).json({
+        success: false,
+        message: 'This expense has already been reviewed',
+      });
+    }
+
+    expense.approvalStatus =
+      action === 'approve' ? 'approved' : 'rejected';
+
+    expense.rejectionReason =
+      action === 'reject' ? String(reason).trim() : '';
+
+    expense.reviewedBy = req.user._id;
+    expense.reviewedAt = new Date();
+
+    await expense.save();
+
+    if (action === 'reject') {
+      const admin = await User.findById(req.user._id)
+        .select('name email');
+
+      const { sendAdminRejectionEmail } =
+        await import('../utils/email.js');
+
+      await sendAdminRejectionEmail({
+        admin,
+        member: expense.createdBy,
+        itemType: 'Expense',
+        title: expense.title,
+        amount: expense.amount,
+        reason: expense.rejectionReason,
+        date: expense.date,
+      });
+    } else {
+      const ids = (expense.splitAmong || [])
+        .map((x) => x.user)
+        .filter(Boolean);
+
+      try {
+        await Promise.all(
+          ids.map((memberId) =>
+            notifyMemberDue({
+              memberId,
+              monthKey: expense.monthKey,
+            })
+          )
+        );
+      } catch (e) {
+        console.error(
+          'Due recalculation notification failed:',
+          e.message
+        );
+      }
+    }
+
+    await sendPushToUsers(
+      [expense.createdBy?._id].filter(Boolean),
+      {
+        title: action === 'approve'
+          ? 'Expense approved'
+          : 'Expense rejected',
+        body: action === 'approve'
+          ? `${expense.title} was approved.`
+          : `${expense.title} was rejected.${
+              expense.rejectionReason
+                ? ` Reason: ${expense.rejectionReason}`
+                : ''
+            }`,
+      },
+      {
+        type: `expense_${
+          action === 'approve' ? 'approved' : 'rejected'
+        }`,
+        expenseId: expense._id.toString(),
+        url: '/member/expenses',
+      }
+    );
+
+    return res.json({
+      success: true,
+      message: `Expense ${
+        action === 'approve' ? 'approved' : 'rejected'
+      }`,
+      expense,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 export const updateExpense = async (req, res) => {
   try {
     const { id } = req.params;
