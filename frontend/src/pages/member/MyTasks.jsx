@@ -230,7 +230,14 @@ export default function MyTasks() {
 
                 <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex items-center justify-between">
                   <span>
-                    Assigned: {new Date(task.assignedDate).toLocaleDateString()}
+                    Assigned: {new Date(task.createdAt || task.assignedDate).toLocaleString('en-IN', {
+                     day: '2-digit',
+                     month: 'short',
+                     year: 'numeric',
+                     hour: '2-digit',
+                     minute: '2-digit',
+                     hour12: true,
+                     })}
                   </span>
                   {task.dueDate && (
                     <span className="font-semibold text-amber-600">
@@ -262,7 +269,16 @@ export default function MyTasks() {
 
                 {task.status === 'completed' && (
                   <span className="w-full py-2 text-center text-emerald-700 text-xs font-bold bg-emerald-50 rounded-xl border border-emerald-100">
-                    ✓ Completed on {task.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'Record'}
+                    ✓ Completed on {task.completedAt
+                     ? new Date(task.completedAt).toLocaleString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                      })
+                      : 'Record'}
                   </span>
                 )}
               </div>
