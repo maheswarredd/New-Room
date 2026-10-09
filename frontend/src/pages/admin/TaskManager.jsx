@@ -599,7 +599,7 @@ export default function TaskManager() {
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Due Date (Optional)</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
