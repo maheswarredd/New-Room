@@ -226,10 +226,24 @@ export default function MyPayments() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        <CheckCircle className="w-3 h-3" />
-                        Recorded
-                      </span>
+                      <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      (p.approvalStatus || (p.isApproved === false ? 'pending' : 'approved')) === 'pending'
+                      ? 'bg-amber-100 text-amber-800'
+                      : (p.approvalStatus || (p.isApproved === false ? 'pending' : 'approved')) === 'rejected'
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                      >
+                      <CheckCircle className="w-3 h-3" />
+                     {(p.approvalStatus || (p.isApproved === false ? 'pending' : 'approved')).toUpperCase()}
+                     </span>
+
+                    {p.rejectionReason && (
+                    <p className="text-[10px] text-rose-600 mt-1">
+                    {p.rejectionReason}
+                    </p>
+                    )}
                     </td>
                   </tr>
                 ))}
