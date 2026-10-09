@@ -230,9 +230,14 @@ if (paymentSource === 'room_fund') {
       });
 
     await expense.save();
+
+    const populated = await Expense.findById(expense._id)
+      .populate('paidBy', 'name avatar roomNo')
+      .populate('splitAmong.user', 'name avatar roomNo');
+
+    // Only approved expenses should affect due calculations or send
+    // financial notifications. Pending expenses wait for admin review.
     if (expense.approvalStatus === 'approved') {
-  // Existing due notifications and financial side effects
-}
     // STEP 12 — Due email notification
     try {
   const affectedMemberIds = resolvedSplit
@@ -303,9 +308,6 @@ if (paymentSource === 'room_fund') {
   }
 }
 
-    const populated = await Expense.findById(expense._id)
-      .populate('paidBy', 'name avatar roomNo')
-      .populate('splitAmong.user', 'name avatar roomNo');
     // ---------------------------------------------
 // BREVO EMAIL - NEW EXPENSE
 // ---------------------------------------------
@@ -359,6 +361,7 @@ try {
       notificationError.message
       );
       }
+    }
 
     return res.status(201).json({
       success: true,
