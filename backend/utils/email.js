@@ -564,4 +564,41 @@ export const sendPaymentEmail = async ({
     subject: `💳 Payment Recorded - ${money(amount)}`,
     html,
   });
+  export const sendAdminRejectionEmail = async ({
+  admin,
+  member,
+  itemType,
+  title,
+  amount,
+  reason,
+  date,
+}) => {
+  if (!admin?.email) return false;
+
+  const html = createEmailHtml({
+    title: `Rejected ${itemType}`,
+    subtitle: 'RoomMate Pro approval update',
+    type: 'expense',
+    content: `
+      <p>Hello <strong>${escapeHtml(admin.name || 'Admin')}</strong>,</p>
+
+      <p>
+        A member ${escapeHtml(member?.name || 'member')}
+        submitted a ${escapeHtml(itemType.toLowerCase())}
+        that has been rejected.
+      </p>
+
+      <p><strong>Details:</strong> ${escapeHtml(title || itemType)}</p>
+      <p><strong>Amount:</strong> ${money(amount)}</p>
+      <p><strong>Date:</strong> ${formatDate(date)}</p>
+      <p><strong>Reason:</strong> ${escapeHtml(reason || 'Not provided')}</p>
+    `,
+  });
+
+  return sendBrevoEmail({
+    to: admin.email,
+    subject: `Rejected ${itemType}: ${title || money(amount)}`,
+    html,
+  });
+};
 };
