@@ -523,11 +523,16 @@ export default function ExpenseManagement() {
               </thead>
              <tbody className="divide-y divide-slate-100 font-medium">
   {expenses.map((expense) => {
-    const expenseDate = new Date(expense.date).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    const expenseDate = new Date(
+    expense.createdAt || expense.date
+    ).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+   hour: '2-digit',
+   minute: '2-digit',
+   hour12: true,
+   });
 
     return (
       <tr
