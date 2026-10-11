@@ -23,7 +23,7 @@ export default function MyPayments() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     amount: '',
-    paymentType: 'rent',
+    paymentType: 'room_fund',
     paymentMethod: 'upi',
     date: new Date().toISOString().split('T')[0],
     notes: '',
@@ -71,7 +71,7 @@ export default function MyPayments() {
   const handleOpenAdd = () => {
     setFormData({
       amount: '',
-      paymentType: 'rent',
+      paymentType: 'room_fund',
       paymentMethod: 'upi',
       date: new Date().toISOString().split('T')[0],
       notes: '',
@@ -299,19 +299,17 @@ export default function MyPayments() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Type</label>
-                  <select
-                   value={formData.paymentType}
-                   onChange={(e) => setFormData({ ...formData, paymentType: e.target.value })}
-                   className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                   >
-                  <option value="rent">Room Rent</option>
-                  <option value="expense_settlement">Expense Settlement</option>
-                  <option value="fund_advance">Advance Fund</option>
-                  <option value="room_fund">Room Fund Contribution</option>
-                  <option value="other">Other</option>
-                  </select>
-                </div>
+                 <label className="block font-bold text-slate-700 mb-1">
+                  Payment Type
+                 </label>
+
+                   <input
+                    type="text"
+                    value="Room Fund Contribution"
+                    readOnly
+                   className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-700 cursor-not-allowed"
+                    />
+                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Method</label>
                   <select
