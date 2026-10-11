@@ -43,9 +43,11 @@ export const getMonthlySummary = async (req, res) => {
       defaultRentPerMember: 0,
     };
 
-    // Load expenses for target month
-    const expenses = await Expense.find({
+    // Load approved normal expenses only.
+// Room Fund expenses must not affect member balance calculations.
+const expenses = await Expense.find({
   monthKey: targetMonth,
+  paymentSource: { $ne: 'room_fund' },
   $or: [
     { approvalStatus: 'approved' },
     { approvalStatus: { $exists: false } },
@@ -102,19 +104,20 @@ const totalRoomFund = payments
         p.approvalStatus === undefined)
   )
   .reduce((sum, p) => sum + Number(p.amount || 0), 0);
-const roomFundExpenses = expenses
-  .filter(
-    (e) =>
-      e.paymentSource === 'room_fund' &&
-      (
-        e.approvalStatus === 'approved' ||
-        e.approvalStatus === undefined
-      )
-  )
-  .reduce(
-    (sum, e) => sum + Number(e.amount || 0),
-    0
-  );
+// Fetch approved Room Fund expenses separately.
+const roomFundExpenseRecords = await Expense.find({
+  monthKey: targetMonth,
+  paymentSource: 'room_fund',
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
+
+const roomFundExpenses = roomFundExpenseRecords.reduce(
+  (sum, expense) => sum + Number(expense.amount || 0),
+  0
+);
 
 const remainingRoomFund = Math.round(
   (totalRoomFund - roomFundExpenses) * 100
