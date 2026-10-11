@@ -266,6 +266,39 @@ const historyItems = [
       setActionLoading(false);
     }
   };
+  const handleDeleteHistory = async (item) => {
+  if (user?.role !== 'admin') {
+    showToast('Only admin can delete Room Fund history', 'error');
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Delete this ${item.type.toLowerCase()} record?\n\n` +
+    `${item.title} - ${money(item.amount)}\n\n` +
+    'This action cannot be undone.'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setActionLoading(true);
+
+    await api.delete(`/${item.endpoint}/${item.id}`);
+
+    showToast('Room Fund history record deleted', 'success');
+
+    // Reload totals and history after deletion.
+    await loadFundData();
+  } catch (error) {
+    showToast(
+      error.response?.data?.message ||
+        'Failed to delete Room Fund history',
+      'error'
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleAdminContribution = async (event) => {
     event.preventDefault();
