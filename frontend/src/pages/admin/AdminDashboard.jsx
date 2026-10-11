@@ -318,11 +318,11 @@ export default function AdminDashboard() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-100">
               <tr>
-                <th className="py-3 px-4">Member</th>
-                <th className="py-3 px-4">Previous Carryover</th>
-                <th className="py-3 px-4">Expense Share</th>
-                <th className="py-3 px-4">Total Paid</th>
-                <th className="py-3 px-4">Adjustments</th>
+                <th className="py-3 px-4">Member Profile</th>
+                <th className="py-3 px-4">Members Total Amount</th>
+                <th className="py-3 px-4">Member Balance</th>
+                <th className="py-3 px-4">Dues</th>
+                <th className="py-3 px-4">Room Fund Paid</th>
                 <th className="py-3 px-4">Net Balance / Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
