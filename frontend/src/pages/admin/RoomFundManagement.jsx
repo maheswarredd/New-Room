@@ -716,11 +716,18 @@ const money = (amount) =>
     }, 500);
   };
 
-  const handleAdminContribution = async (event) => {
-    event.preventDefault(); 
+  const handleDownloadCsv = () => {
+  // CSV download function code ikkada undali
+};
 
-  const handleAdminContribution = async (event) => {
-    event.preventDefault();
+const handleDownloadPdf = () => {
+  // PDF download function code ikkada undali
+};
+
+const handleAdminContribution = async (event) => {
+  event.preventDefault();
+
+  const amount = Number(contributionAmount);
 
     const amount = Number(contributionAmount);
 
@@ -840,33 +847,50 @@ const money = (amount) =>
             Contributions, expense approvals and available balance.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+  <select
+    value={selectedMonth}
+    onChange={(event) =>
+      setSelectedMonth(event.target.value)
+    }
+    className="rounded-lg border p-2"
+  >
+    {months.map((month) => (
+      <option key={month} value={month}>
+        {month}
+      </option>
+    ))}
+  </select>
 
-        <div className="flex items-center gap-2">
-          <select
-            value={selectedMonth}
-            onChange={(event) =>
-              setSelectedMonth(event.target.value)
-            }
-            className="rounded-lg border p-2"
-          >
-            {months.map((month) => (
-              <option key={month} value={month}>
-                {month}
-              </option>
-            ))}
-          </select>
+  <button
+    type="button"
+    onClick={loadFundData}
+    disabled={actionLoading}
+    className="rounded-lg border p-2"
+    title="Refresh"
+  >
+    <RefreshCw className="h-5 w-5" />
+  </button>
 
-          <button
-            type="button"
-            onClick={loadFundData}
-            disabled={actionLoading}
-            className="rounded-lg border p-2"
-            title="Refresh"
-          >
-            <RefreshCw className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+  <button
+    type="button"
+    onClick={handleDownloadCsv}
+    disabled={loading || actionLoading}
+    className="rounded-lg bg-green-600 px-3 py-2 text-white disabled:opacity-50"
+  >
+    Download CSV
+  </button>
+
+  <button
+    type="button"
+    onClick={handleDownloadPdf}
+    disabled={loading || actionLoading}
+    className="rounded-lg bg-red-600 px-3 py-2 text-white disabled:opacity-50"
+  >
+    Download PDF
+  </button>
+</div>
+            </div>
 
       {/* Fund Summary */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
