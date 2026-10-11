@@ -170,20 +170,39 @@ const prevPayments = await Payment.find({
       const hasRentExpense = categoryTotals.rent > 0;
       const fixedRentDue = hasRentExpense ? 0 : (member.monthlyRentShare || settings.defaultRentPerMember || 0);
 
-      // 4. Direct payments / rent paid to Admin
-     const directPaymentsThisMonth = payments
-     .filter(
-      (p) =>
+      // 4. Ordinary payments only.
+// Room Fund contributions must not affect ordinary member balances.
+const directPaymentsThisMonth = payments
+  .filter(
+    (p) =>
       p.fromUser &&
       p.fromUser._id.toString() === memberIdStr &&
       p.paymentType !== 'room_fund'
-      )
-      .reduce((sum, p) => sum + p.amount, 0);
+  )
+  .reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
 
-      // 5. Total Paid & Total Share for this month
-      const totalPaidThisMonth = expensesPaidThisMonth + directPaymentsThisMonth;
-      const totalShareThisMonth = expenseShareThisMonth + fixedRentDue;
+// 5. Total Paid & Total Share for this month
+const totalPaidThisMonth =
+  expensesPaidThisMonth + directPaymentsThisMonth;
 
+const totalShareThisMonth =
+  expenseShareThisMonth + fixedRentDue;
+
+// Track approved Room Fund contributions separately.
+const roomFundPaidThisMonth = payments
+  .filter(
+    (p) =>
+      p.fromUser &&
+      p.fromUser._id.toString() === memberIdStr &&
+      p.paymentType === 'room_fund'
+  )
+  .reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
       // 6. Manual Adjustments for this month
       const adjustmentAmountThisMonth = adjustments
         .filter((a) => a.user.toString() === memberIdStr)
@@ -197,8 +216,16 @@ const prevPayments = await Payment.find({
         .filter((e) => e.paidBy && e.paidBy.toString() === memberIdStr)
         .reduce((sum, e) => sum + e.amount, 0);
       const prevDirectPaid = prevPayments
-        .filter((p) => p.fromUser && p.fromUser.toString() === memberIdStr)
-        .reduce((sum, p) => sum + p.amount, 0);
+      .filter(
+      (p) =>
+      p.fromUser &&
+      p.fromUser.toString() === memberIdStr &&
+      p.paymentType !== 'room_fund'
+      )
+      .reduce(
+      (sum, p) => sum + Number(p.amount || 0),
+      0
+      );
 
       // Deduct previous months' shares
       let prevShare = 0;
