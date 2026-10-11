@@ -107,16 +107,13 @@ export const createExpense = async (req, res) => {
       });
     }
 
-    // Check member permissions if not admin
-    if (req.user.role !== 'admin') {
-      const settings = await RoomSettings.findOne();
-      if (settings && settings.allowMemberAddExpense === false) {
-        return res.status(403).json({
-          success: false,
-          message: 'Members are not permitted to add expenses per room settings.',
-        });
-      }
-    }
+    // Only admin can create room expenses.
+if (req.user.role !== 'admin') {
+  return res.status(403).json({
+    success: false,
+    message: 'Only admin can create room expenses.',
+  });
+}
 
     // Determine who paid
     let actualPaidBy = req.user._id;
