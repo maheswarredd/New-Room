@@ -17,9 +17,15 @@ const paymentSchema = new mongoose.Schema(
       min: [0.01, 'Amount must be greater than 0'],
     },
     paymentType: {
-      type: String,
-      enum: ['rent', 'expense_settlement', 'fund_advance', 'other'],
-      default: 'rent',
+    type: String,
+    enum: [
+     'rent',
+     'expense_settlement',
+     'fund_advance',
+     'room_fund',
+     'other'
+     ],
+     default: 'rent',
     },
     paymentMethod: {
       type: String,
