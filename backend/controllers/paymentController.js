@@ -90,7 +90,7 @@ export const createPayment = async (req, res) => {
     const payment = new Payment({
       fromUser: actualFromUser,
       amount: parseFloat(amount),
-      paymentType:'room_fund',
+      paymentType:paymentType || 'rent',
       //paymentType: paymentType || 'rent',
       paymentMethod: paymentMethod || 'upi',
       date: paymentDate,
