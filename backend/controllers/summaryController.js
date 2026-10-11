@@ -88,13 +88,23 @@ const payments = await Payment.find({
       }
     });
 
-    const totalPaymentsReceived = payments.reduce((sum, p) => sum + p.amount, 0);
-    const roomFundExpenses = expenses
-     .filter((e) => e.paymentSource === 'room_fund')
-     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const totalPaymentsReceived = payments
+  .filter((p) => p.paymentType !== 'room_fund')
+  .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-    const remainingRoomFund =
-     totalPaymentsReceived - roomFundExpenses;
+const totalRoomFund = payments
+  .filter((p) => p.paymentType === 'room_fund')
+  .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+const roomFundExpenses = expenses
+  .filter(
+    (e) =>
+      e.paymentSource === 'room_fund' &&
+      e.approvalStatus === 'approved'
+  )
+  .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+const remainingRoomFund = totalRoomFund - roomFundExpenses;
     const adminUser = await User.findOne({ role: 'admin' }).select('_id');
     const adminPaidExpenses = expenses
       .filter((e) => adminUser && e.paidBy && e.paidBy.toString() === adminUser._id.toString())
@@ -244,10 +254,14 @@ const prevPayments = await Payment.find({
       settings,
       roomSummary: {
         totalRoomExpenses,
-        totalPaymentsReceived,
-        totalRoomFund: Math.round(totalPaymentsReceived * 100) / 100,
-        usedRoomFund: Math.round(roomFundExpenses * 100) / 100,
-        remainingRoomFund: Math.round(remainingRoomFund * 100) / 100,
+        totalPaymentsReceived:
+        Math.round(totalPaymentsReceived * 100) / 100,
+        totalRoomFund:
+        Math.round(totalRoomFund * 100) / 100,
+        usedRoomFund:
+        Math.round(roomFundExpenses * 100) / 100,
+        remainingRoomFund:
+        Math.round(remainingRoomFund * 100) / 100,
         adminPaidExpenses: Math.round(adminPaidExpenses * 100) / 100,
         memberPaidExpenses: Math.round(memberPaidExpenses * 100) / 100,
         totalPendingMemberDue,
