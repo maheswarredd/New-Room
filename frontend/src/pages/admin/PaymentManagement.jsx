@@ -403,6 +403,7 @@ export default function PaymentManagement() {
                     <option value="rent">Monthly Rent</option>
                     <option value="expense_settlement">Expense Settlement</option>
                     <option value="fund_advance">Advance Fund</option>
+                    <option value="room_fund">Room Fund Contribution</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
