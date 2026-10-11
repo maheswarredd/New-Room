@@ -148,13 +148,7 @@ export default function MyExpenses() {
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 transition self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>I Paid an Expense</span>
-        </button>
+       
       </div>
 
       {/* Filter toolbar */}
