@@ -216,7 +216,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
+ 
       {/* Room Money Summary */}
       <section className="bg-slate-900 rounded-2xl p-5 sm:p-6 shadow-lg text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-5">
@@ -249,6 +249,63 @@ export default function AdminDashboard() {
           </div>
         </div>
       </section>
+
+      {/* Room Fund Summary */}
+<section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 className="text-lg font-bold text-slate-800">
+        Room Fund Summary
+      </h2>
+
+      <p className="text-sm text-slate-500">
+        Approved contributions and approved Room Fund expenses.
+      </p>
+    </div>
+
+    <Link
+      to="/admin/room-fund"
+      className="rounded-lg bg-indigo-600 px-4 py-2 text-center text-sm font-semibold text-white"
+    >
+      Manage Room Fund
+    </Link>
+  </div>
+
+  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="rounded-xl border bg-blue-50 p-4">
+      <p className="text-sm font-semibold text-slate-600">
+        Total Room Fund
+      </p>
+
+      <p className="mt-2 text-2xl font-bold text-blue-700">
+        {currency}
+        {Number(totalRoomFund).toLocaleString('en-IN')}
+      </p>
+    </div>
+
+    <div className="rounded-xl border bg-rose-50 p-4">
+      <p className="text-sm font-semibold text-slate-600">
+        Used Room Fund
+      </p>
+
+      <p className="mt-2 text-2xl font-bold text-rose-700">
+        {currency}
+        {Number(usedRoomFund).toLocaleString('en-IN')}
+      </p>
+    </div>
+
+    <div className="rounded-xl border bg-emerald-50 p-4">
+      <p className="text-sm font-semibold text-slate-600">
+        Remaining Room Fund
+      </p>
+
+      <p className="mt-2 text-2xl font-bold text-emerald-700">
+        {currency}
+        {Number(remainingRoomFund).toLocaleString('en-IN')}
+      </p>
+    </div>
+  </div>
+</section>
 
       {/* Quick Action Buttons */}
       <div className="flex flex-wrap items-center gap-3">
