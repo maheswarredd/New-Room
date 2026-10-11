@@ -16,12 +16,15 @@ import {
 export default function MyExpenses() {
   const { user, showToast } = useAuth();
   const [expenses, setExpenses] = useState([]);
-  const [months, setMonths] = useState([]);
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+ const [months, setMonths] = useState([]);
+ const [selectedMonth, setSelectedMonth] = useState('');
+ const [selectedCategory, setSelectedCategory] = useState('all');
+ const [searchQuery, setSearchQuery] = useState('');
+ const [loading, setLoading] = useState(true);
 
+// Remaining Room Fund balance
+const [remainingRoomFund, setRemainingRoomFund] = useState(0);
+const [roomFundLoading, setRoomFundLoading] = useState(false);
   // Add Expense Modal
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,8 +44,14 @@ export default function MyExpenses() {
   }, []);
 
   useEffect(() => {
-    fetchExpenses();
-  }, [selectedMonth, selectedCategory, searchQuery]);
+  fetchExpenses();
+ }, [selectedMonth, selectedCategory, searchQuery]);
+
+useEffect(() => {
+  if (selectedMonth) {
+    fetchRoomFundBalance();
+  }
+}, [selectedMonth]);
 
   const fetchInitial = async () => {
     try {
@@ -74,6 +83,30 @@ export default function MyExpenses() {
       setLoading(false);
     }
   };
+  const fetchRoomFundBalance = async () => {
+  try {
+    setRoomFundLoading(true);
+
+    const res = await api.get(
+      `/summary/monthly?month=${selectedMonth}`
+    );
+
+    if (res.data.success) {
+      setRemainingRoomFund(
+        Number(
+          res.data.roomSummary?.remainingRoomFund || 0
+        )
+      );
+    }
+  } catch (error) {
+    console.error(
+      'Failed to load Room Fund balance:',
+      error
+    );
+  } finally {
+    setRoomFundLoading(false);
+  }
+};
 
   const handleOpenAdd = () => {
     setFormData({
@@ -146,16 +179,26 @@ if (res.data.success) {
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Room Expenses</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Browse expenses recorded by all room members and log purchases you paid for.
-          </p>
-        </div>
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+  <div>
+    <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+      Room Expenses
+    </h1>
 
-       
-      </div>
+    <p className="text-sm text-slate-500 mt-1">
+      Submit room expenses for Room Fund approval.
+    </p>
+  </div>
+
+  <button
+    type="button"
+    onClick={handleOpenAdd}
+    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition"
+  >
+    <Plus className="w-4 h-4" />
+    Add Expense
+  </button>
+</div>
 
       {/* Filter toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
@@ -337,17 +380,60 @@ if (res.data.success) {
             </div>
 
             <form onSubmit={handleAddSubmit} className="mt-4 space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Item / Expense Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g. Milk & Eggs, Cooking Oil, Wi-Fi Recharge"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+
+  {/* Fixed Payment Type */}
+  <div>
+    <label className="block font-bold text-slate-700 mb-1">
+      Payment Type
+    </label>
+
+    <div className="flex items-center gap-2 w-full px-3 py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-bold">
+      <CreditCard className="w-4 h-4" />
+      Room Fund
+      <span className="ml-auto text-[10px] bg-white px-2 py-1 rounded-lg">
+        Admin Approval Required
+      </span>
+    </div>
+  </div>
+
+  {/* Remaining Room Fund Balance */}
+  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+    <p className="text-xs font-bold text-emerald-700">
+      Remaining Room Fund
+    </p>
+
+    <p className="text-2xl font-black text-emerald-800 mt-1">
+      {roomFundLoading
+        ? 'Loading...'
+        : `₹${remainingRoomFund.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`}
+    </p>
+
+    <p className="text-[11px] text-emerald-700 mt-2">
+      Your expense request will be sent to the admin.
+      The fund balance changes only after approval.
+    </p>
+  </div>
+
+  {/* Existing Item / Expense Title field continues below */}
+  <div>
+    <label className="block font-bold text-slate-700 mb-1">
+      Item / Expense Title *
+    </label>
+
+    <input
+      type="text"
+      required
+      value={formData.title}
+      onChange={(e) =>
+        setFormData({ ...formData, title: e.target.value })
+      }
+      placeholder="e.g. Milk & Eggs, Cooking Oil, Onions"
+      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
