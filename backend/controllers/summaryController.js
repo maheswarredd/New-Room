@@ -227,8 +227,7 @@ expenses.forEach((e) => {
       const hasRentExpense = categoryTotals.rent > 0;
       const fixedRentDue = hasRentExpense ? 0 : (member.monthlyRentShare || settings.defaultRentPerMember || 0);
 
-      // 4. Ordinary payments only.
-// Room Fund contributions must not affect ordinary member balances.
+    // 4. Ordinary payments only
 const directPaymentsThisMonth = payments
   .filter(
     (p) =>
@@ -241,15 +240,7 @@ const directPaymentsThisMonth = payments
     0
   );
 
-// 5. Total Paid & Total Share for this month
-const totalPaidThisMonth =
-  expensesPaidThisMonth + directPaymentsThisMonth;
-
-const totalShareThisMonth =
-  expenseShareThisMonth + fixedRentDue;
-
-// Track approved Room Fund contributions separately.
-   // Approved Room Fund contributions paid by this member
+// 5. Approved Room Fund contributions paid by this member
 const roomFundPaidThisMonth = payments
   .filter(
     (p) =>
@@ -264,6 +255,14 @@ const roomFundPaidThisMonth = payments
     0
   );
 
+// 6. Total paid includes approved Room Fund contributions
+const totalPaidThisMonth =
+  expensesPaidThisMonth +
+  directPaymentsThisMonth +
+  roomFundPaidThisMonth;
+
+const totalShareThisMonth =
+  expenseShareThisMonth + fixedRentDue;
       // 6. Manual Adjustments for this month
       const adjustmentAmountThisMonth = adjustments
         .filter((a) => a.user.toString() === memberIdStr)
@@ -285,16 +284,15 @@ const roomFundPaidThisMonth = payments
     0
   );
       const prevDirectPaid = prevPayments
-      .filter(
-      (p) =>
+  .filter(
+    (p) =>
       p.fromUser &&
-      p.fromUser.toString() === memberIdStr &&
-      p.paymentType !== 'room_fund'
-      )
-      .reduce(
-      (sum, p) => sum + Number(p.amount || 0),
-      0
-      );
+      p.fromUser.toString() === memberIdStr
+  )
+  .reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
 
       // Deduct previous months' shares
       let prevShare = 0;
