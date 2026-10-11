@@ -11,8 +11,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
-
 export default function RoomFundManagement() {
   const { user, showToast } = useAuth();
 
@@ -155,6 +155,40 @@ export default function RoomFundManagement() {
           'Rejection reason is required',
           'error'
         );
+        // Room Fund history: combine contributions and expenses.
+// Use approval time first so transactions appear in the
+// actual order they were accepted.
+const historyItems = [
+  ...approvedContributions.map((payment) => ({
+    id: payment._id,
+    type: 'Contribution',
+    title: payment.fromUser?.name || 'Room Fund contribution',
+    amount: Number(payment.amount || 0),
+    timestamp:
+      payment.reviewedAt ||
+      payment.createdAt ||
+      payment.date,
+    status: 'Approved',
+    endpoint: 'payments',
+  })),
+
+  ...approvedFundExpenses.map((expense) => ({
+    id: expense._id,
+    type: 'Expense',
+    title: expense.title,
+    amount: Number(expense.amount || 0),
+    timestamp:
+      expense.reviewedAt ||
+      expense.createdAt ||
+      expense.date,
+    status: 'Approved',
+    endpoint: 'expenses',
+  })),
+].sort(
+  (a, b) =>
+    new Date(b.timestamp || 0).getTime() -
+    new Date(a.timestamp || 0).getTime()
+);
         return;
       }
     }
