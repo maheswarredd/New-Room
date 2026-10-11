@@ -97,18 +97,32 @@ export default function ExpenseManagement() {
   };
 
   const fetchExpenses = async () => {
-    try {
-      setLoading(true);
-      let query = `?`;
-      if (selectedMonth) query += `month=${selectedMonth}&`;
-      if (selectedCategory && selectedCategory !== 'all') query += `category=${selectedCategory}&`;
-      if (selectedPaidBy && selectedPaidBy !== 'all') query += `paidBy=${selectedPaidBy}&`;
-      if (searchQuery) query += `search=${encodeURIComponent(searchQuery)}&`;
+  try {
+    setLoading(true);
 
-      const res = await api.get(`/expenses${query}`);
-      if (res.data.success) {
-        setExpenses(res.data.expenses || []);
-      }
+    let query = `?excludeRoomFund=true&`;
+
+    if (selectedMonth) {
+      query += `month=${selectedMonth}&`;
+    }
+
+    if (selectedCategory && selectedCategory !== 'all') {
+      query += `category=${selectedCategory}&`;
+    }
+
+    if (selectedPaidBy && selectedPaidBy !== 'all') {
+      query += `paidBy=${selectedPaidBy}&`;
+    }
+
+    if (searchQuery) {
+      query += `search=${encodeURIComponent(searchQuery)}&`;
+    }
+
+    const res = await api.get(`/expenses${query}`);
+
+    if (res.data.success) {
+      setExpenses(res.data.expenses || []);
+    }
     } catch (err) {
       showToast('Error loading expenses', 'error');
     } finally {
