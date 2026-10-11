@@ -98,29 +98,35 @@ export default function MyExpenses() {
     try {
       setActionLoading(true);
       const data = new FormData();
-      data.append('title', formData.title);
-      data.append('amount', formData.amount);
-      data.append('category', formData.category);
-      data.append('date', formData.date);
-      data.append('description', formData.description);
-      data.append('paidBy', user.id);
-      data.append('splitType', 'equal');
+data.append('title', formData.title);
+data.append('amount', formData.amount);
+data.append('category', formData.category);
+data.append('date', formData.date);
+data.append('description', formData.description);
+data.append('paidBy', user.id);
+data.append('splitType', 'equal');
 
-      if (fileToUpload) {
-        data.append('receipt', fileToUpload);
-      } else if (formData.receiptPhoto) {
-        data.append('receiptPhoto', formData.receiptPhoto);
-      }
+// Member expense is a Room Fund request.
+data.append('paymentSource', 'room_fund');
 
-      const res = await api.post('/expenses', data);
-      if (res.data.success) {
-        showToast('Expense recorded successfully! Balances updated.', 'success');
-        setIsAddModalOpen(false);
-        fetchExpenses();
-      }
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to add expense', 'error');
-    } finally {
+if (fileToUpload) {
+  data.append('receipt', fileToUpload);
+} else if (formData.receiptPhoto) {
+  data.append('receiptPhoto', formData.receiptPhoto);
+}
+
+const res = await api.post('/expenses', data);
+if (res.data.success) {
+  showToast(
+    'Room Fund expense request submitted for admin approval.',
+    'success'
+  );
+  setIsAddModalOpen(false);
+  fetchExpenses();
+}
+} catch (err) {
+  showToast(err.response?.data?.message || 'Failed to add expense', 'error');
+  } finally {
       setActionLoading(false);
     }
   };
