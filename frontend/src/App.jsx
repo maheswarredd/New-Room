@@ -9,6 +9,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import MemberManagement from './pages/admin/MemberManagement';
 import ExpenseManagement from './pages/admin/ExpenseManagement';
 import PaymentManagement from './pages/admin/PaymentManagement';
+import RoomFundManagement from './pages/admin/RoomFundManagement';
 import TaskManager from './pages/admin/TaskManager';
 import MonthlyReports from './pages/admin/MonthlyReports';
 import SettingsPage from './pages/admin/SettingsPage';
@@ -106,21 +107,31 @@ export default function App() {
               }
             />
             <Route
-              path="/admin/expenses"
-              element={
-                <AdminOnlyRoute>
-                  <ExpenseManagement />
-                </AdminOnlyRoute>
+             path="/admin/expenses"
+             element={
+             <AdminOnlyRoute>
+             <ExpenseManagement />
+            </AdminOnlyRoute>
+            }
+            />
+
+           <Route
+           path="/admin/room-fund"
+           element={
+           <AdminOnlyRoute>
+            <RoomFundManagement />
+             </AdminOnlyRoute>
               }
             />
-            <Route
-              path="/admin/payments"
-              element={
-                <AdminOnlyRoute>
-                  <PaymentManagement />
-                </AdminOnlyRoute>
-              }
-            />
+
+           <Route
+            path="/admin/payments"
+            element={
+            <AdminOnlyRoute>
+            <PaymentManagement />
+             </AdminOnlyRoute>
+             }
+             />
             <Route
               path="/admin/tasks"
               element={
