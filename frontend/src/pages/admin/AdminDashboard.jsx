@@ -74,6 +74,14 @@ export default function AdminDashboard() {
   const currency = summaryData?.settings?.currency || '₹';
   const totalRoomExpenses = summaryData?.roomSummary?.totalRoomExpenses || 0;
   const totalPayments = summaryData?.roomSummary?.totalPaymentsReceived || 0;
+  const totalRoomFund =
+  summaryData?.roomSummary?.totalRoomFund || 0;
+
+  const usedRoomFund =
+  summaryData?.roomSummary?.usedRoomFund || 0;
+
+  const remainingRoomFund =
+  summaryData?.roomSummary?.remainingRoomFund || 0;
   const activeMembersCount = summaryData?.roomSummary?.activeMembers || 0;
   const pendingTasksCount = dashboardMetrics?.pendingTasksCount || 0;
   const adminPaidExpenses = summaryData?.roomSummary?.adminPaidExpenses || 0;
