@@ -147,22 +147,34 @@ if (req.user.role === 'admin') {
     paymentSource = 'member';
   }
 }
-    // Calculate split among active members if 'equal'
-    let resolvedSplit = [];
-    const members = await User.find({ role: 'member', isActive: true });
+    // Room Fund expenses must never be split among members.
+let resolvedSplit = [];
 
-    if (splitType === 'custom' && Array.isArray(splitAmong) && splitAmong.length > 0) {
-      resolvedSplit = splitAmong;
-    } else {
-      // Split equally among all active members
-      if (members.length > 0) {
-        const perMemberShare = Math.round((numAmount / members.length) * 100) / 100;
-        resolvedSplit = members.map((m) => ({
-          user: m._id,
-          amount: perMemberShare,
-        }));
-      }
+if (paymentSource !== 'room_fund') {
+  const members = await User.find({
+    role: 'member',
+    isActive: true,
+  });
+
+  if (
+    splitType === 'custom' &&
+    Array.isArray(splitAmong) &&
+    splitAmong.length > 0
+  ) {
+    resolvedSplit = splitAmong;
+  } else {
+    // Normal expenses only: split among active members.
+    if (members.length > 0) {
+      const perMemberShare =
+        Math.round((numAmount / members.length) * 100) / 100;
+
+      resolvedSplit = members.map((m) => ({
+        user: m._id,
+        amount: perMemberShare,
+      }));
     }
+  }
+}
 
     const expenseDate = date ? new Date(date) : new Date();
     const year = expenseDate.getFullYear();
