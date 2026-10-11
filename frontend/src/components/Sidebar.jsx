@@ -10,22 +10,24 @@ import {
   Settings,
   UserCheck,
   User,
+  Wallet,
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const { isAdmin } = useAuth();
-
-  const adminLinks = [
-    { to: '/admin/dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
-    { to: '/admin/members', label: 'Room Members', icon: Users },
-    { to: '/admin/expenses', label: 'All Expenses', icon: Receipt },
-    { to: '/admin/payments', label: 'Payments & Dues', icon: CreditCard },
-    { to: '/admin/tasks', label: 'Pending Work', icon: CheckSquare },
-    { to: '/admin/ledger', label: 'Monthly Ledger', icon: FileSpreadsheet },
-    { to: '/admin/settings', label: 'Room Settings', icon: Settings },
-  ];
+const adminLinks = [
+  { to: '/admin/dashboard', label: 'Admin Dashboard', icon: LayoutDashboard },
+  { to: '/admin/members', label: 'Room Members', icon: Users },
+  { to: '/admin/expenses', label: 'All Expenses', icon: Receipt },
+  { to: '/admin/room-fund', label: 'Room Fund Management', icon: Wallet },
+  { to: '/admin/payments', label: 'Payments & Dues', icon: CreditCard },
+  { to: '/admin/tasks', label: 'Pending Work', icon: CheckSquare },
+  { to: '/admin/ledger', label: 'Monthly Ledger', icon: FileSpreadsheet },
+  { to: '/admin/settings', label: 'Room Settings', icon: Settings },
+];
+  
 
   const memberLinks = [
     { to: '/member/dashboard', label: 'My Dashboard', icon: LayoutDashboard },
