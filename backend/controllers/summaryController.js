@@ -92,10 +92,16 @@ const payments = await Payment.find({
   .filter((p) => p.paymentType !== 'room_fund')
   .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
-const totalRoomFund = payments
-  .filter((p) => p.paymentType === 'room_fund')
-  .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
+const totalRoomFund = payments
+  .filter(
+    (p) =>
+      p.paymentType === 'room_fund' &&
+      p.isApproved === true &&
+      (p.approvalStatus === 'approved' ||
+        p.approvalStatus === undefined)
+  )
+  .reduce((sum, p) => sum + Number(p.amount || 0), 0);
 const roomFundExpenses = expenses
   .filter(
     (e) =>
@@ -136,14 +142,7 @@ const prevPayments = await Payment.find({
   const memberIdStr = member._id.toString();
 
   // Room Fund contribution paid by this member
-    const roomFundPaidThisMonth = payments
-     .filter(
-      (p) =>
-        p.fromUser &&
-        p.fromUser._id.toString() === memberIdStr &&
-        p.paymentType === 'room_fund'
-        )
-        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+   
 
   // 1. Target month expenses paid by this member
   const expensesPaidThisMonth = expenses
@@ -192,17 +191,21 @@ const totalShareThisMonth =
   expenseShareThisMonth + fixedRentDue;
 
 // Track approved Room Fund contributions separately.
+   // Approved Room Fund contributions paid by this member
 const roomFundPaidThisMonth = payments
   .filter(
     (p) =>
       p.fromUser &&
       p.fromUser._id.toString() === memberIdStr &&
-      p.paymentType === 'room_fund'
+      p.paymentType === 'room_fund' &&
+      p.isApproved === true &&
+      p.approvalStatus === 'approved'
   )
   .reduce(
     (sum, p) => sum + Number(p.amount || 0),
     0
   );
+
       // 6. Manual Adjustments for this month
       const adjustmentAmountThisMonth = adjustments
         .filter((a) => a.user.toString() === memberIdStr)
@@ -366,8 +369,17 @@ export const getDashboardMetrics = async (req, res) => {
       ).reduce((sum, e) => sum + e.amount, 0);
 
       const myDirectPayments = (
-        await Payment.find({ monthKey, fromUser: req.user._id })
-      ).reduce((sum, p) => sum + p.amount, 0);
+      await Payment.find({
+      monthKey,
+     fromUser: req.user._id,
+     isApproved: true,
+     paymentType: { $ne: 'room_fund' },
+     $or: [
+      { approvalStatus: 'approved' },
+      { approvalStatus: { $exists: false } }
+     ]
+   })
+    ).reduce((sum, p) => sum + Number(p.amount || 0), 0);
 
       memberStats = {
         totalPaidThisMonth: myExpensesPaid + myDirectPayments,
