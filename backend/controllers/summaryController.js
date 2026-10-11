@@ -161,9 +161,14 @@ const prevPayments = await Payment.find({
       const fixedRentDue = hasRentExpense ? 0 : (member.monthlyRentShare || settings.defaultRentPerMember || 0);
 
       // 4. Direct payments / rent paid to Admin
-      const directPaymentsThisMonth = payments
-        .filter((p) => p.fromUser && p.fromUser._id.toString() === memberIdStr)
-        .reduce((sum, p) => sum + p.amount, 0);
+     const directPaymentsThisMonth = payments
+     .filter(
+      (p) =>
+      p.fromUser &&
+      p.fromUser._id.toString() === memberIdStr &&
+      p.paymentType !== 'room_fund'
+      )
+      .reduce((sum, p) => sum + p.amount, 0);
 
       // 5. Total Paid & Total Share for this month
       const totalPaidThisMonth = expensesPaidThisMonth + directPaymentsThisMonth;
