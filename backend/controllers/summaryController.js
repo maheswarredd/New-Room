@@ -131,14 +131,24 @@ const prevPayments = await Payment.find({
     });
     const prevAdjustments = await BalanceAdjustment.find({ monthKey: { $lt: targetMonth } });
 
-    // Build per-member financial ledger
-    const memberLedgers = members.map((member) => {
-      const memberIdStr = member._id.toString();
+     // Build per-member financial ledger
+ const memberLedgers = members.map((member) => {
+  const memberIdStr = member._id.toString();
 
-      // 1. Target month expenses paid by this member
-      const expensesPaidThisMonth = expenses
-        .filter((e) => e.paidBy && e.paidBy._id.toString() === memberIdStr)
-        .reduce((sum, e) => sum + e.amount, 0);
+  // Room Fund contribution paid by this member
+    const roomFundPaidThisMonth = payments
+     .filter(
+      (p) =>
+        p.fromUser &&
+        p.fromUser._id.toString() === memberIdStr &&
+        p.paymentType === 'room_fund'
+        )
+        .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  // 1. Target month expenses paid by this member
+  const expensesPaidThisMonth = expenses
+    .filter((e) => e.paidBy && e.paidBy._id.toString() === memberIdStr)
+    .reduce((sum, e) => sum + e.amount, 0);
 
       // 2. Target month expenses share owed by this member
       let expenseShareThisMonth = 0;
@@ -216,29 +226,30 @@ const prevPayments = await Payment.find({
       const advanceBalance = netBalance > 0 ? netBalance : 0;
 
       return {
-        member: {
-          id: member._id,
-          name: member.name,
-          email: member.email,
-          roomNo: member.roomNo,
-          phone: member.phone,
-          avatar: member.avatar,
-          isActive: member.isActive,
-          monthlyRentShare: member.monthlyRentShare,
-        },
-        carryForward: Math.round(carryForward * 100) / 100,
-        fixedRentDue,
-        expenseShare: Math.round(expenseShareThisMonth * 100) / 100,
-        totalShareDue: Math.round(totalShareThisMonth * 100) / 100,
-        expensesPaid: Math.round(expensesPaidThisMonth * 100) / 100,
-        directPayments: Math.round(directPaymentsThisMonth * 100) / 100,
-        totalPaid: Math.round(totalPaidThisMonth * 100) / 100,
-        adjustments: Math.round(adjustmentAmountThisMonth * 100) / 100,
-        netBalance,
-        pendingDue,
-        advanceBalance,
-      };
-    });
+     member: {
+     id: member._id,
+     name: member.name,
+     email: member.email,
+     roomNo: member.roomNo,
+     phone: member.phone,
+     avatar: member.avatar,
+     isActive: member.isActive,
+     monthlyRentShare: member.monthlyRentShare,
+   },
+   carryForward: Math.round(carryForward * 100) / 100,
+   fixedRentDue,
+   expenseShare: Math.round(expenseShareThisMonth * 100) / 100,
+   totalShareDue: Math.round(totalShareThisMonth * 100) / 100,
+   expensesPaid: Math.round(expensesPaidThisMonth * 100) / 100,
+   directPayments: Math.round(directPaymentsThisMonth * 100) / 100,
+   totalPaid: Math.round(totalPaidThisMonth * 100) / 100,
+   adjustments: Math.round(adjustmentAmountThisMonth * 100) / 100,
+   roomFundPaid: Math.round(roomFundPaidThisMonth * 100) / 100,
+   netBalance,
+   pendingDue,
+   advanceBalance,
+ };
+  });
 
     // If logged-in user is a normal member, filter out other members' private financial statements
     let finalLedgers = memberLedgers;
