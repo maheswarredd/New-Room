@@ -17,8 +17,28 @@ import {
 // @access  Private
 export const getExpenses = async (req, res) => {
   try {
-    const { month, category, paidBy, search, startDate, endDate } = req.query;
+    const {
+      month,
+      category,
+      paidBy,
+      search,
+      startDate,
+      endDate,
+      excludeRoomFund,
+      paymentSource: requestedSource,
+    } = req.query;
+
     let filter = {};
+
+    // Admin normal Expenses page must exclude Room Fund expenses.
+    if (excludeRoomFund === 'true') {
+      filter.paymentSource = { $ne: 'room_fund' };
+    }
+
+    // Allow member Room Expenses page to show Room Fund history only.
+    if (requestedSource === 'room_fund') {
+      filter.paymentSource = 'room_fund';
+    }
 
     if (month) {
       filter.monthKey = month;
