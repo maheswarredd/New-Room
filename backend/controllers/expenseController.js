@@ -338,26 +338,41 @@ try {
   );
 }
 
-    const affectedUsers = resolvedSplit.map((item) => item.user).filter(Boolean);
-     try {
-    await sendPushToUsers(
-     affectedUsers,
+    const affectedUsers = resolvedSplit
+  .map((item) => item.user)
+  .filter(Boolean);
+
+try {
+  await sendPushToUsers(
+    affectedUsers,
     {
-      title: '🧾 New Expense Added',
-      body: `${title.trim()} • ₹${numAmount.toFixed(2)} • Your split is included`,
+      title: paymentSource === 'room_fund'
+        ? 'Room Fund Expense Added'
+        : 'New Expense Added',
+
+      body: paymentSource === 'room_fund'
+        ? `${title.trim()} • ₹${numAmount.toFixed(
+            2
+          )} was paid from the Room Fund. Your share is included.`
+        : `${title.trim()} • ₹${numAmount.toFixed(
+            2
+          )} • Your split is included`,
     },
     {
-      type: 'expense',
+      type: paymentSource === 'room_fund'
+        ? 'room_fund_expense'
+        : 'expense',
+
       expenseId: expense._id.toString(),
       url: '/member/expenses',
-      }
-     );
-     } catch (notificationError) {
-     console.error(
-     'Expense notification failed:',
-      notificationError.message
-      );
-      }
+    }
+  );
+} catch (notificationError) {
+  console.error(
+    'Expense notification failed:',
+    notificationError.message
+  );
+}
     }
 
     return res.status(201).json({
