@@ -163,10 +163,12 @@ if (req.user.role !== 'admin') {
 // ROOM COMMON FUND VALIDATION
 // ----------------------------------------------------
 if (paymentSource === 'room_fund') {
-  // Total money paid by all members/admin records for this month
+  // Only approved Room Fund contributions count.
   const payments = await Payment.find({
     monthKey,
+    paymentType: 'room_fund',
     isApproved: true,
+    approvalStatus: 'approved',
   });
 
   const totalFund = payments.reduce(
@@ -175,10 +177,14 @@ if (paymentSource === 'room_fund') {
   );
 
   // Previous expenses paid from Room Common Fund
-  const previousFundExpenses = await Expense.find({
-    monthKey,
-    paymentSource: 'room_fund',
-  });
+ const previousFundExpenses = await Expense.find({
+  monthKey,
+  paymentSource: 'room_fund',
+  $or: [
+    { approvalStatus: 'approved' },
+    { approvalStatus: { $exists: false } },
+  ],
+});
 
   const usedFund = previousFundExpenses.reduce(
     (sum, expense) => sum + Number(expense.amount || 0),
