@@ -716,20 +716,14 @@ const money = (amount) =>
     }, 500);
   };
 
-  const handleDownloadCsv = () => {
-  // CSV download function code ikkada undali
-};
+ 
 
-const handleDownloadPdf = () => {
-  // PDF download function code ikkada undali
-};
+
 
 const handleAdminContribution = async (event) => {
   event.preventDefault();
 
   const amount = Number(contributionAmount);
-
-    const amount = Number(contributionAmount);
 
     if (!Number.isFinite(amount) || amount <= 0) {
       showToast('Enter a valid contribution amount', 'error');
