@@ -780,85 +780,105 @@ const historyItems = [
         </form>
       </section>
 
-      {/* Fund history */}
-      <section className="rounded-2xl border bg-white p-5 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
-          <History className="h-5 w-5 text-indigo-600" />
-          Room Fund History
-        </h2>
+      {/* Room Fund History */}
+<section className="rounded-2xl border bg-white p-5 shadow-sm">
+  <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
+    <History className="h-5 w-5 text-indigo-600" />
+    Room Fund History
+  </h2>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="p-3">Type</th>
-                <th className="p-3">Description</th>
-                <th className="p-3">Amount</th>
-                <th className="p-3">Date</th>
-                <th className="p-3">Status</th>
-              </tr>
-            </thead>
+  <div className="overflow-x-auto">
+    <table className="w-full text-left text-sm">
+      <thead className="bg-slate-50">
+        <tr>
+          <th className="p-3">Type</th>
+          <th className="p-3">Description</th>
+          <th className="p-3">Amount Added / Used</th>
+          <th className="p-3">Date & Time</th>
+          <th className="p-3">Status</th>
 
-            <tbody>
-              {[
-                ...approvedContributions.map((payment) => ({
-                  id: payment._id,
-                  type: 'Contribution',
-                  title:
-                    payment.fromUser?.name ||
-                    'Room Fund contribution',
-                  amount: payment.amount,
-                  date: payment.date,
-                  status: 'Approved',
-                })),
+          {user?.role === 'admin' && (
+            <th className="p-3">Action</th>
+          )}
+        </tr>
+      </thead>
 
-                ...approvedFundExpenses.map((expense) => ({
-                  id: expense._id,
-                  type: 'Expense',
-                  title: expense.title,
-                  amount: expense.amount,
-                  date: expense.date,
-                  status: 'Approved',
-                })),
-              ]
-                .sort(
-                  (a, b) =>
-                    new Date(b.date || 0) -
-                    new Date(a.date || 0)
-                )
-                .map((item) => (
-                  <tr key={`${item.type}-${item.id}`} className="border-t">
-                    <td className="p-3">{item.type}</td>
-                    <td className="p-3">{item.title}</td>
-                    <td className="p-3 font-semibold">
-                      {money(item.amount)}
-                    </td>
-                    <td className="p-3">
-                      {item.date
-                        ? new Date(item.date).toLocaleString()
-                        : '-'}
-                    </td>
-                    <td className="p-3 text-green-700">
-                      {item.status}
-                    </td>
-                  </tr>
-                ))}
+      <tbody>
+        {historyItems.map((item) => (
+          <tr
+            key={`${item.type}-${item.id}`}
+            className="border-t"
+          >
+            <td className="p-3">
+              {item.type}
+            </td>
 
-              {approvedContributions.length === 0 &&
-                approvedFundExpenses.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="p-5 text-center text-slate-500"
-                    >
-                      No Room Fund transactions found.
-                    </td>
-                  </tr>
-                )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            <td className="p-3">
+              {item.title}
+            </td>
+
+            <td
+              className={`p-3 font-bold ${
+                item.type === 'Contribution'
+                  ? 'text-green-700'
+                  : 'text-red-700'
+              }`}
+            >
+              {item.type === 'Contribution' ? '+' : '−'}
+              {money(item.amount)}
+            </td>
+
+            <td className="p-3 whitespace-nowrap">
+              {item.timestamp
+                ? new Date(item.timestamp).toLocaleString(
+                    'en-IN',
+                    {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true,
+                    }
+                  )
+                : '-'}
+            </td>
+
+            <td className="p-3 text-green-700">
+              {item.status}
+            </td>
+
+            {user?.role === 'admin' && (
+              <td className="p-3">
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => handleDeleteHistory(item)}
+                  className="rounded-lg bg-red-600 p-2 text-white hover:bg-red-700 disabled:opacity-50"
+                  title="Delete history record"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </td>
+            )}
+          </tr>
+        ))}
+
+        {historyItems.length === 0 && (
+          <tr>
+            <td
+              colSpan={user?.role === 'admin' ? 6 : 5}
+              className="p-5 text-center text-slate-500"
+            >
+              No Room Fund transactions found.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</section>
     </div>
   );
 }
