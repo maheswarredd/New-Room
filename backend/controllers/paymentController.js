@@ -91,6 +91,7 @@ export const createPayment = async (req, res) => {
       fromUser: actualFromUser,
       amount: parseFloat(amount),
       paymentType:'room_fund',
+      //paymentType: paymentType || 'rent',
       paymentMethod: paymentMethod || 'upi',
       date: paymentDate,
       monthKey,
@@ -102,6 +103,36 @@ export const createPayment = async (req, res) => {
     });
 
     await payment.save();
+    // Notify admins when a member submits a Room Fund contribution.
+if (
+  req.user.role !== 'admin' &&
+  payment.paymentType === 'room_fund'
+) {
+  try {
+    const admins = await User.find({
+      role: 'admin',
+      isActive: true,
+    }).select('_id');
+
+    await sendPushToUsers(
+      admins.map((admin) => admin._id),
+      {
+        title: 'New Room Fund Contribution',
+        body: `A member submitted ₹${Number(payment.amount).toFixed(2)} for approval.`,
+      },
+      {
+        type: 'room_fund_pending',
+        paymentId: payment._id.toString(),
+        url: '/admin/room-fund',
+      }
+    );
+  } catch (notificationError) {
+    console.error(
+      'Room Fund admin notification failed:',
+      notificationError.message
+    );
+  }
+}
 
     const populated = await Payment.findById(payment._id)
       .populate('fromUser', 'name email avatar roomNo')
@@ -237,27 +268,42 @@ export const reviewPayment = async (req, res) => {
         console.error('Due notification failed:', error.message);
       }
     }
+ const isRoomFundPayment = payment.paymentType === 'room_fund';
 
-    await sendPushToUsers(
-      [payment.fromUser._id],
-      {
-        title: action === 'approve'
-          ? 'Payment approved'
-          : 'Payment rejected',
-        body: action === 'approve'
-          ? 'Your payment has been approved.'
-          : `Your payment has been rejected.${
-              payment.rejectionReason
-                ? ` Reason: ${payment.rejectionReason}`
-                : ''
-            }`,
-      },
-      {
-        type: `payment_${action === 'approve' ? 'approved' : 'rejected'}`,
-        paymentId: payment._id.toString(),
-        url: '/member/payments',
-      }
-    );
+await sendPushToUsers(
+  [payment.fromUser._id],
+  {
+    title: isRoomFundPayment
+      ? action === 'approve'
+        ? 'Room Fund Contribution Approved'
+        : 'Room Fund Contribution Rejected'
+      : action === 'approve'
+        ? 'Payment Approved'
+        : 'Payment Rejected',
+
+    body: action === 'approve'
+      ? isRoomFundPayment
+        ? `Your Room Fund contribution of ₹${Number(payment.amount).toFixed(2)} has been approved.`
+        : 'Your payment has been approved.'
+      : `Your ${isRoomFundPayment ? 'Room Fund contribution' : 'payment'} of ₹${Number(payment.amount).toFixed(2)} was rejected.${
+          payment.rejectionReason
+            ? ` Reason: ${payment.rejectionReason}`
+            : ''
+        }`,
+  },
+  {
+    type: isRoomFundPayment
+      ? `room_fund_${action === 'approve' ? 'approved' : 'rejected'}`
+      : `payment_${action === 'approve' ? 'approved' : 'rejected'}`,
+
+    paymentId: payment._id.toString(),
+
+    url: isRoomFundPayment
+      ? '/member/payments'
+      : '/member/payments',
+  }
+);
+   
 
     return res.json({
       success: true,
