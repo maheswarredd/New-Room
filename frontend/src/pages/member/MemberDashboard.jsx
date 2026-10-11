@@ -302,6 +302,19 @@ export default function MemberDashboard() {
           {(statement?.roomSummary?.totalRoomFund || 0).toLocaleString()}
           </span>
           </div>
+{/* NEW: My Room Fund Contribution */}
+            
+   <div className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+  <span className="font-semibold text-slate-600">
+    My Room Fund Contribution:
+  </span>
+
+  <span className="font-extrabold text-slate-900">
+    {currency}
+    {Number(myLedger?.roomFundPaid || 0).toLocaleString('en-IN')}
+  </span>
+</div>
+
 
           {/* Used Fund */}
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-between">
