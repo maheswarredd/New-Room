@@ -88,6 +88,11 @@ export const createPayment = async (req, res) => {
 const approved = req.user.role === 'admin';
 
 // Members can submit Room Fund contributions only.
+// Admin payments are approved immediately.
+// Member payments require admin approval.
+const approved = req.user.role === 'admin';
+
+// Members can submit Room Fund contributions only.
 // Admins can continue recording other payment types.
 const finalPaymentType =
   req.user.role === 'admin'
@@ -107,7 +112,6 @@ const payment = new Payment({
   isApproved: approved,
   approvalStatus: approved ? 'approved' : 'pending',
 });
-
     await payment.save();
     // Notify admins when a member submits a Room Fund contribution.
 if (
