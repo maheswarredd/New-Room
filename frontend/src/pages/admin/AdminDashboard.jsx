@@ -71,16 +71,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const currency = summaryData?.settings?.currency || '₹';
-  const totalRoomExpenses = summaryData?.roomSummary?.totalRoomExpenses || 0;
-  const totalPayments = summaryData?.roomSummary?.totalPaymentsReceived || 0;
-  const totalRoomFund =
+ const currency = summaryData?.settings?.currency || '₹';
+
+const totalRoomExpenses =
+  summaryData?.roomSummary?.totalRoomExpenses || 0;
+
+// Approved regular payments, excluding Room Fund
+const regularPayments =
+  summaryData?.roomSummary?.totalPaymentsReceived || 0;
+
+// Approved Room Fund contributions
+const totalRoomFund =
   summaryData?.roomSummary?.totalRoomFund || 0;
 
-  const usedRoomFund =
+// Combined approved payments and Room Fund contributions
+const totalPayments = regularPayments + totalRoomFund;
+
+const usedRoomFund =
   summaryData?.roomSummary?.usedRoomFund || 0;
 
-  const remainingRoomFund =
+const remainingRoomFund =
   summaryData?.roomSummary?.remainingRoomFund || 0;
   const activeMembersCount = summaryData?.roomSummary?.activeMembers || 0;
   const pendingTasksCount = dashboardMetrics?.pendingTasksCount || 0;
