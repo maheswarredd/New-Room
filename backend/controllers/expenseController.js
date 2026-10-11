@@ -705,9 +705,27 @@ export const deleteExpense = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Expense not found' });
     }
 
-    if (req.user.role !== 'admin' && expense.createdBy?.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Not authorized to delete this expense' });
-    }
+    // Room Fund history can be deleted only by admin.
+if (
+  expense.paymentSource === 'room_fund' &&
+  req.user.role !== 'admin'
+) {
+  return res.status(403).json({
+    success: false,
+    message: 'Only admin can delete Room Fund history',
+  });
+}
+
+// Preserve existing permission for normal expenses.
+if (
+  req.user.role !== 'admin' &&
+  expense.createdBy?.toString() !== req.user._id.toString()
+) {
+  return res.status(403).json({
+    success: false,
+    message: 'Not authorized to delete this expense',
+  });
+}
 
     await Expense.findByIdAndDelete(id);
 
