@@ -90,6 +90,7 @@ export const createExpense = async (req, res) => {
       splitAmong,
       description,
       receiptPhoto,
+      paymentSource: requestedPaymentSource,
     } = req.body;
 
     if (!title || !amount || !category) {
@@ -108,36 +109,44 @@ export const createExpense = async (req, res) => {
     }
 
     // Only admin can create room expenses.
-if (req.user.role !== 'admin') {
+// Members can submit only Room Fund expense requests.
+if (
+  req.user.role !== 'admin' &&
+  requestedPaymentSource !== 'room_fund'
+) {
   return res.status(403).json({
     success: false,
-    message: 'Only admin can create room expenses.',
+    message: 'Members can only submit Room Fund expense requests.',
   });
 }
 
     // Determine who paid
-    let actualPaidBy = req.user._id;
-   let paymentSource = 'member';
+   // Determine the expense payment source.
+let actualPaidBy = req.user._id;
 
- if (req.user.role === 'admin') {
+// Members can only request expenses from the Room Fund.
+// Admin can choose Room Fund or a member as payer.
+let paymentSource =
+  req.user.role === 'admin' ? 'member' : 'room_fund';
+
+if (req.user.role === 'admin') {
   if (paidBy === 'ADMIN_FUND') {
     actualPaidBy = req.user._id;
     paymentSource = 'room_fund';
-    } else if (paidBy) {
+  } else if (paidBy) {
     const selectedPayer = await User.findById(paidBy);
 
-     if (!selectedPayer) {
+    if (!selectedPayer) {
       return res.status(400).json({
         success: false,
         message: 'Selected payer was not found.',
-       });
-       }
+      });
+    }
 
-     actualPaidBy = selectedPayer._id;
-     paymentSource = 'member';
+    actualPaidBy = selectedPayer._id;
+    paymentSource = 'member';
   }
 }
-
     // Calculate split among active members if 'equal'
     let resolvedSplit = [];
     const members = await User.find({ role: 'member', isActive: true });
@@ -162,7 +171,10 @@ if (req.user.role !== 'admin') {
     // ----------------------------------------------------
 // ROOM COMMON FUND VALIDATION
 // ----------------------------------------------------
-if (paymentSource === 'room_fund') {
+if (
+  paymentSource === 'room_fund' &&
+  req.user.role === 'admin'
+) {
   // Only approved Room Fund contributions count.
   const payments = await Payment.find({
     monthKey,
@@ -425,22 +437,68 @@ export const reviewExpense = async (req, res) => {
     }
 
     if (expense.approvalStatus !== 'pending') {
-      return res.status(409).json({
-        success: false,
-        message: 'This expense has already been reviewed',
-      });
-    }
+  return res.status(409).json({
+    success: false,
+    message: 'This expense has already been reviewed',
+  });
+}
 
-    expense.approvalStatus =
-      action === 'approve' ? 'approved' : 'rejected';
+// Check Room Fund availability before approving a member request.
+if (action === 'approve' && expense.paymentSource === 'room_fund') {
+  const fundPayments = await Payment.find({
+    monthKey: expense.monthKey,
+    paymentType: 'room_fund',
+    isApproved: true,
+    $or: [
+      { approvalStatus: 'approved' },
+      { approvalStatus: { $exists: false } },
+    ],
+  });
 
-    expense.rejectionReason =
-      action === 'reject' ? String(reason).trim() : '';
+  const totalFund = fundPayments.reduce(
+    (sum, payment) => sum + Number(payment.amount || 0),
+    0
+  );
 
-    expense.reviewedBy = req.user._id;
-    expense.reviewedAt = new Date();
+  const fundExpenses = await Expense.find({
+    monthKey: expense.monthKey,
+    paymentSource: 'room_fund',
+    $or: [
+      { approvalStatus: 'approved' },
+      { approvalStatus: { $exists: false } },
+    ],
+  });
 
-    await expense.save();
+  const usedFund = fundExpenses.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  );
+
+  const remainingFund = totalFund - usedFund;
+
+  if (Number(expense.amount) > remainingFund) {
+    return res.status(400).json({
+      success: false,
+      message: `Insufficient Room Fund. Available ₹${remainingFund.toFixed(2)}, requested ₹${Number(expense.amount).toFixed(2)}.`,
+      fund: {
+        totalFund,
+        usedFund,
+        remainingFund,
+      },
+    });
+  }
+}
+
+expense.approvalStatus =
+  action === 'approve' ? 'approved' : 'rejected';
+
+expense.rejectionReason =
+  action === 'reject' ? String(reason).trim() : '';
+
+expense.reviewedBy = req.user._id;
+expense.reviewedAt = new Date();
+
+await expense.save();
 
     if (action === 'reject') {
       const admin = await User.findById(req.user._id)
