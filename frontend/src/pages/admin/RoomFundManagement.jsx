@@ -132,6 +132,43 @@ export default function RoomFundManagement() {
         expense.approvalStatus === undefined
       )
   );
+  // Room Fund history: combine contributions and expenses.
+// Approved transactions appear newest first.
+const historyItems = [
+...approvedContributions.map((payment) => ({
+id: payment._id,
+type: 'Contribution',
+title: payment.fromUser?.name || 'Room Fund contribution',
+amount: Number(payment.amount || 0),
+timestamp:
+payment.reviewedAt ||
+payment.createdAt ||
+payment.date,
+status: 'Approved',
+endpoint: 'payments',
+})),
+
+```
+...approvedFundExpenses.map((expense) => ({
+  id: expense._id,
+  type: 'Expense',
+  title: expense.title,
+  amount: Number(expense.amount || 0),
+  timestamp:
+    expense.reviewedAt ||
+    expense.createdAt ||
+    expense.date,
+  status: 'Approved',
+  endpoint: 'expenses',
+})),
+```
+
+].sort(
+(a, b) =>
+new Date(b.timestamp || 0).getTime() -
+new Date(a.timestamp || 0).getTime()
+);
+
 
   const money = (amount) =>
     `₹${Number(amount || 0).toLocaleString('en-IN', {
@@ -151,10 +188,7 @@ export default function RoomFundManagement() {
       );
 
       if (reason === null || !reason.trim()) {
-        showToast(
-          'Rejection reason is required',
-          'error'
-        );
+        
         // Room Fund history: combine contributions and expenses.
 // Use approval time first so transactions appear in the
 // actual order they were accepted.
