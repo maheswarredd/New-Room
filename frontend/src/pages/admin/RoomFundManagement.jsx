@@ -488,8 +488,8 @@ export default function RoomFundManagement() {
                       : '-'}
                   </td>
 
-                  <td className="p-3">
-                    <div className="flex gap-2">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         disabled={actionLoading}
@@ -499,26 +499,23 @@ export default function RoomFundManagement() {
                             'approve'
                           )
                         }
-                        className="rounded bg-green-600 p-2 text-white"
-                        title="Approve"
+                        className="rounded-lg bg-green-600 px-3 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+                
                       >
-                        <CheckCircle className="h-4 w-4" />
+                        Approve
+  
                       </button>
 
-                      <button
-                        type="button"
-                        disabled={actionLoading}
-                        onClick={() =>
-                          handleReviewContribution(
-                            payment._id,
-                            'reject'
-                          )
-                        }
-                        className="rounded bg-red-600 p-2 text-white"
-                        title="Reject"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </button>
+                     <button
+                       type="button"
+                       disabled={actionLoading}
+                      onClick={() =>
+                      handleReviewContribution(payment._id, 'reject')
+                          }
+                     className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                    Reject
+                </button>
                     </div>
                   </td>
                 </tr>
