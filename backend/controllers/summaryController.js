@@ -106,17 +106,54 @@ const roomFundExpenses = expenses
   .filter(
     (e) =>
       e.paymentSource === 'room_fund' &&
-      e.approvalStatus === 'approved'
+      (
+        e.approvalStatus === 'approved' ||
+        e.approvalStatus === undefined
+      )
   )
-  .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  .reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
 
-const remainingRoomFund = totalRoomFund - roomFundExpenses;
-    const adminUser = await User.findOne({ role: 'admin' }).select('_id');
-    const adminPaidExpenses = expenses
-      .filter((e) => adminUser && e.paidBy && e.paidBy.toString() === adminUser._id.toString())
-      .reduce((sum, e) => sum + e.amount, 0);
-     const memberPaidExpenses = totalRoomExpenses - adminPaidExpenses;
+const remainingRoomFund = Math.round(
+  (totalRoomFund - roomFundExpenses) * 100
+) / 100;
 
+    const adminUser = await User.findOne({ role: 'admin' })
+  .select('_id');
+
+const adminPaidExpenses = expenses
+  .filter(
+    (e) =>
+      e.paymentSource !== 'room_fund' &&
+      adminUser &&
+      e.paidBy &&
+      e.paidBy.toString() === adminUser._id.toString()
+  )
+  .reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
+
+const memberPaidExpenses = expenses
+  .filter(
+    (e) => e.paymentSource !== 'room_fund'
+  )
+  .reduce(
+    (sum, e) => {
+      const paidById = e.paidBy?._id
+        ? e.paidBy._id.toString()
+        : e.paidBy?.toString();
+
+      const isAdminPaid =
+        adminUser &&
+        paidById === adminUser._id.toString();
+
+      return sum + (isAdminPaid ? 0 : Number(e.amount || 0));
+    },
+    0
+  );
     // Calculate carry forward from all previous months up to targetMonth
     // (A month key like '2026-09' is lexicographically less than '2026-10')
     const prevExpenses = await Expense.find({
@@ -146,24 +183,45 @@ const prevPayments = await Payment.find({
 
   // 1. Target month expenses paid by this member
   const expensesPaidThisMonth = expenses
-    .filter((e) => e.paidBy && e.paidBy._id.toString() === memberIdStr)
-    .reduce((sum, e) => sum + e.amount, 0);
-
+  .filter(
+    (e) =>
+      e.paymentSource !== 'room_fund' &&
+      e.paidBy &&
+      e.paidBy._id.toString() === memberIdStr
+  )
+  .reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
       // 2. Target month expenses share owed by this member
       let expenseShareThisMonth = 0;
-      expenses.forEach((e) => {
-        // If rent is already categorized as an expense and member has fixed rent, avoid double count if custom
-        const userSplit = e.splitAmong.find(
-          (s) => s.user && s.user._id.toString() === memberIdStr
-        );
-        if (userSplit) {
-          expenseShareThisMonth += userSplit.amount;
-        } else if (e.splitType === 'equal' && members.length > 0) {
-          // If splitAmong wasn't populated or was equal
-          const share = Math.round((e.amount / members.length) * 100) / 100;
-          expenseShareThisMonth += share;
-        }
-      });
+
+expenses.forEach((e) => {
+  // Room Fund expenses must not increase member dues.
+  if (e.paymentSource === 'room_fund') {
+    return;
+  }
+
+  const userSplit = e.splitAmong.find(
+    (s) =>
+      s.user &&
+      s.user._id.toString() === memberIdStr
+  );
+
+  if (userSplit) {
+    expenseShareThisMonth += Number(userSplit.amount || 0);
+  } else if (
+    e.splitType === 'equal' &&
+    members.length > 0
+  ) {
+    const share =
+      Math.round(
+        (Number(e.amount || 0) / members.length) * 100
+      ) / 100;
+
+    expenseShareThisMonth += share;
+  }
+});
 
       // 3. Fixed monthly rent share (if member has specific share or default setting, and rent is not logged as an expense)
       const hasRentExpense = categoryTotals.rent > 0;
@@ -216,8 +274,16 @@ const roomFundPaidThisMonth = payments
 
       // Add previous months' paid
       const prevExpensesPaid = prevExpenses
-        .filter((e) => e.paidBy && e.paidBy.toString() === memberIdStr)
-        .reduce((sum, e) => sum + e.amount, 0);
+  .filter(
+    (e) =>
+      e.paymentSource !== 'room_fund' &&
+      e.paidBy &&
+      e.paidBy.toString() === memberIdStr
+  )
+  .reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
       const prevDirectPaid = prevPayments
       .filter(
       (p) =>
@@ -232,15 +298,27 @@ const roomFundPaidThisMonth = payments
 
       // Deduct previous months' shares
       let prevShare = 0;
-      prevExpenses.forEach((e) => {
-        const s = e.splitAmong.find((item) => item.user && item.user.toString() === memberIdStr);
-        if (s) {
-          prevShare += s.amount;
-        } else if (members.length > 0) {
-          prevShare += Math.round((e.amount / members.length) * 100) / 100;
-        }
-      });
 
+prevExpenses.forEach((e) => {
+  // Never add Room Fund expenses to member carry-forward dues.
+  if (e.paymentSource === 'room_fund') {
+    return;
+  }
+
+  const s = e.splitAmong.find(
+    (item) =>
+      item.user &&
+      item.user.toString() === memberIdStr
+  );
+
+  if (s) {
+    prevShare += Number(s.amount || 0);
+  } else if (members.length > 0) {
+    prevShare += Math.round(
+      (Number(e.amount || 0) / members.length) * 100
+    ) / 100;
+  }
+});
       const prevAdj = prevAdjustments
         .filter((a) => a.user.toString() === memberIdStr)
         .reduce((sum, a) => sum + a.adjustmentAmount, 0);
