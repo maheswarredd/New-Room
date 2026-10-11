@@ -83,9 +83,7 @@ export const createPayment = async (req, res) => {
       photoUrl = `/uploads/${req.file.filename}`;
     }
 
-   // Admin payments are approved immediately.
-// Member payments always require admin approval.
-const approved = req.user.role === 'admin';
+  
 
 // Members can submit Room Fund contributions only.
 // Admin payments are approved immediately.
