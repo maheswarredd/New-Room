@@ -211,16 +211,27 @@ export const reviewPayment = async (req, res) => {
         message: 'Action must be approve or reject',
       });
     }
+const payment = await Payment.findById(req.params.id)
+  .populate('fromUser', 'name email');
 
-    const payment = await Payment.findById(req.params.id)
-      .populate('fromUser', 'name email');
+if (!payment) {
+  return res.status(404).json({
+    success: false,
+    message: 'Payment not found',
+  });
+}
 
-    if (!payment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Payment not found',
-      });
-    }
+// Require a reason when rejecting a Room Fund contribution.
+if (
+  payment.paymentType === 'room_fund' &&
+  action === 'reject' &&
+  !String(reason).trim()
+) {
+  return res.status(400).json({
+    success: false,
+    message: 'Please enter a rejection reason.',
+  });
+}
 
     if (payment.approvalStatus !== 'pending') {
       return res.status(409).json({
