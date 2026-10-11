@@ -83,24 +83,30 @@ export const createPayment = async (req, res) => {
       photoUrl = `/uploads/${req.file.filename}`;
     }
 
-    // Payments entered by admins are approved immediately.
-    // Member-submitted payments remain pending until an admin reviews them.
-    const approved = req.user.role === 'admin';
+   // Admin payments are approved immediately.
+// Member payments always require admin approval.
+const approved = req.user.role === 'admin';
 
-    const payment = new Payment({
-      fromUser: actualFromUser,
-      amount: parseFloat(amount),
-      paymentType:paymentType || 'rent',
-      //paymentType: paymentType || 'rent',
-      paymentMethod: paymentMethod || 'upi',
-      date: paymentDate,
-      monthKey,
-      proofPhoto: photoUrl,
-      notes: notes ? notes.trim() : '',
-      recordedBy: req.user._id,
-      isApproved: approved,
-      approvalStatus: approved ? 'approved' : 'pending',
-    });
+// Members can submit Room Fund contributions only.
+// Admins can continue recording other payment types.
+const finalPaymentType =
+  req.user.role === 'admin'
+    ? paymentType || 'rent'
+    : 'room_fund';
+
+const payment = new Payment({
+  fromUser: actualFromUser,
+  amount: parseFloat(amount),
+  paymentType: finalPaymentType,
+  paymentMethod: paymentMethod || 'upi',
+  date: paymentDate,
+  monthKey,
+  proofPhoto: photoUrl,
+  notes: notes ? notes.trim() : '',
+  recordedBy: req.user._id,
+  isApproved: approved,
+  approvalStatus: approved ? 'approved' : 'pending',
+});
 
     await payment.save();
     // Notify admins when a member submits a Room Fund contribution.
