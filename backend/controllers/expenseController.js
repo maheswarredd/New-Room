@@ -276,11 +276,45 @@ if (
       createdBy: req.user._id,
       });
 
-    await expense.save();
+   await expense.save();
 
-    const populated = await Expense.findById(expense._id)
-      .populate('paidBy', 'name avatar roomNo')
-      .populate('splitAmong.user', 'name avatar roomNo');
+// Notify admin about a pending Room Fund expense request.
+if (
+  req.user.role !== 'admin' &&
+  expense.paymentSource === 'room_fund' &&
+  expense.approvalStatus === 'pending'
+) {
+  try {
+    const admins = await User.find({
+      role: 'admin',
+      isActive: true,
+    }).select('_id');
+
+    await sendPushToUsers(
+      admins.map((admin) => admin._id),
+      {
+        title: 'Pending Room Fund Expense',
+        body: `${expense.title} - ₹${Number(
+          expense.amount
+        ).toFixed(2)} requires approval.`,
+      },
+      {
+        type: 'room_fund_expense_pending',
+        expenseId: expense._id.toString(),
+        url: '/admin/room-fund',
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Pending Room Fund expense notification failed:',
+      error.message
+    );
+  }
+}
+
+const populated = await Expense.findById(expense._id)
+  .populate('paidBy', 'name avatar roomNo')
+  .populate('splitAmong.user', 'name avatar roomNo');
 
     // Only approved expenses should affect due calculations or send
     // financial notifications. Pending expenses wait for admin review.
