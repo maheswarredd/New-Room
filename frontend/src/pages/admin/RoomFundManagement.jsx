@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -15,6 +19,43 @@ import {
 } from 'lucide-react';
 export default function RoomFundManagement() {
   const { user, showToast } = useAuth();
+
+  const previousPendingIds = useRef(new Set());
+  const firstPendingLoad = useRef(true);
+  const playPendingRequestSound = () => {
+  try {
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    const audio = new AudioContextClass();
+
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 880;
+
+    gain.gain.setValueAtTime(0.2, audio.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audio.currentTime + 0.5
+    );
+
+    oscillator.connect(gain);
+    gain.connect(audio.destination);
+
+    oscillator.start();
+    oscillator.stop(audio.currentTime + 0.5);
+
+    oscillator.onended = () => {
+      audio.close().catch(() => {});
+    };
+  } catch (error) {
+    console.error('Notification sound failed:', error);
+  }
+};
 
   const [months, setMonths] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
@@ -44,10 +85,14 @@ export default function RoomFundManagement() {
   }, []);
 
   useEffect(() => {
-    if (selectedMonth) {
-      loadFundData();
-    }
-  }, [selectedMonth]);
+  if (!selectedMonth || user?.role !== 'admin') return;
+
+  const intervalId = setInterval(() => {
+    loadFundData();
+  }, 15000);
+
+  return () => clearInterval(intervalId);
+}, [selectedMonth, user?.role]);
 
   const loadMonths = async () => {
     try {
@@ -81,11 +126,37 @@ export default function RoomFundManagement() {
           api.get(`/expenses?month=${selectedMonth}`),
         ]);
 
-      setSummary(summaryRes.data.roomSummary || {});
+      const nextPayments = paymentsRes.data.payments || [];
+const nextExpenses = expensesRes.data.expenses || [];
 
-      setPayments(paymentsRes.data.payments || []);
+const pendingIds = new Set([
+  ...nextPayments
+    .filter((p) => p.approvalStatus === 'pending')
+    .map((p) => `payment:${p._id}`),
 
-      setExpenses(expensesRes.data.expenses || []);
+  ...nextExpenses
+    .filter(
+      (e) =>
+        e.approvalStatus === 'pending' &&
+        e.paymentSource === 'room_fund'
+    )
+    .map((e) => `expense:${e._id}`),
+]);
+
+const hasNewRequest = [...pendingIds].some(
+  (id) => !previousPendingIds.current.has(id)
+);
+
+if (!firstPendingLoad.current && hasNewRequest) {
+  playPendingRequestSound();
+}
+
+previousPendingIds.current = pendingIds;
+firstPendingLoad.current = false;
+
+setSummary(summaryRes.data.roomSummary || {});
+setPayments(nextPayments);
+setExpenses(nextExpenses);
     } catch (error) {
       console.error('Failed to load Room Fund:', error);
 
