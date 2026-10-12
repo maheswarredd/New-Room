@@ -625,6 +625,38 @@ await expense.save();
         expenseId: expense._id.toString(),
         url: '/member/expenses',
       }
+      // Notify all members when a Room Fund expense is approved.
+if (
+  action === 'approve' &&
+  expense.paymentSource === 'room_fund'
+) {
+  try {
+    const members = await User.find({
+      role: 'member',
+      isActive: true,
+    }).select('_id');
+
+    await sendPushToUsers(
+      members.map((member) => member._id),
+      {
+        title: 'Room Fund Expense Approved',
+        body: `${expense.title} - ₹${Number(
+          expense.amount
+        ).toFixed(2)} was approved.`,
+      },
+      {
+        type: 'room_fund_expense_approved',
+        expenseId: expense._id.toString(),
+        url: '/member/dashboard',
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Room Fund expense notification failed:',
+      error.message
+    );
+  }
+}
     );
 
     return res.json({
