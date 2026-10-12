@@ -3,136 +3,90 @@ import "./Footer.css";
 
 export default function Footer() {
   const [showProfile, setShowProfile] = useState(false);
-  const [rotation, setRotation] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    const x = (e.clientY - rect.top) / rect.height;
-    const y = (e.clientX - rect.left) / rect.width;
-
-    setRotation({
-      x: (0.5 - x) * 18,
-      y: (y - 0.5) * 22,
-    });
-  };
-
-  const resetRotation = () => setRotation({ x: 0, y: 0 });
 
   return (
     <>
-      <footer className="developer-footer">
-        <div
-          className="developer-3d-card"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={resetRotation}
+      <footer className="mini-dev-footer">
+        <span>
+          © {new Date().getFullYear()} RoomMate Pro
+        </span>
+
+        <span className="mini-footer-divider">|</span>
+
+        <span className="mini-developed-by">Developed by</span>
+
+        <button
+          type="button"
+          className="mini-dev-link"
           onClick={() => setShowProfile(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setShowProfile(true);
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Open Maheswar Reddy developer profile"
-          style={{
-            transform: `perspective(900px) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-          }}
         >
-          <div className="developer-card-glow" />
-
-          <div className="developer-avatar-wrap">
-            <img
-              src="https://i.ibb.co/RTddRmJk/Maheswar-Reddy-website.png"
-              alt="Maheswar Reddy"
-              className="developer-avatar"
-              loading="lazy"
-            />
-          </div>
-
-          <p className="developer-label">DESIGNED & DEVELOPED BY</p>
-
-          <h3 className="developer-name">
-            Maheswar <span>Reddy</span>
-          </h3>
-
-          <p className="developer-role">
-            Full Stack Developer · QA Testing
-          </p>
-
-          <span className="developer-profile-button">
-            Explore My Profile ↗
-          </span>
-        </div>
-
-        <p className="developer-copyright">
-          © {new Date().getFullYear()} RoomMate Pro · All rights reserved.
-        </p>
+          Maheswar Reddy
+          <span className="mini-dev-badge">↗</span>
+        </button>
       </footer>
 
       {showProfile && (
         <div
-          className="developer-modal-backdrop"
+          className="mini-dev-overlay"
           onClick={() => setShowProfile(false)}
         >
-          <section
-            className="developer-modal"
+          <div
+            className="mini-dev-popup"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="developer-modal-title"
+            aria-labelledby="mini-dev-title"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               type="button"
-              className="developer-modal-close"
+              className="mini-dev-close"
               onClick={() => setShowProfile(false)}
-              aria-label="Close developer profile"
+              aria-label="Close profile"
             >
               ×
             </button>
 
-            <img
-              src="https://i.ibb.co/RTddRmJk/Maheswar-Reddy-website.png"
-              alt="Maheswar Reddy"
-              className="developer-modal-avatar"
-            />
+            <div className="mini-dev-3d">
+              <img
+                src="https://i.ibb.co/RTddRmJk/Maheswar-Reddy-website.png"
+                alt="Maheswar Reddy"
+                className="mini-dev-photo"
+              />
+            </div>
 
-            <p className="developer-label">DEVELOPER PROFILE</p>
+            <p className="mini-dev-caption">DEVELOPER PROFILE</p>
 
-            <h2 id="developer-modal-title">
+            <h2 id="mini-dev-title">
               Maheswar <span>Reddy</span>
             </h2>
 
-            <p className="developer-modal-description">
-              Full Stack Developer passionate about web development,
-              testing and creative technology.
+            <p className="mini-dev-role">
+              Full Stack Developer · QA Testing
             </p>
 
-            <div className="developer-skills">
-              <span>HTML</span>
-              <span>CSS</span>
-              <span>JavaScript</span>
-              <span>React</span>
-              <span>Node.js</span>
-              <span>MongoDB</span>
-              <span>SQL</span>
-              <span>QA Testing</span>
-              <span>AI Creations</span>
+            <div className="mini-dev-skills">
+              {[
+                "HTML",
+                "CSS",
+                "JavaScript",
+                "React",
+                "Node.js",
+                "MongoDB",
+                "SQL",
+                "AI Creations",
+              ].map((skill) => (
+                <span key={skill}>{skill}</span>
+              ))}
             </div>
 
             <button
               type="button"
-              className="developer-done-button"
+              className="mini-dev-done"
               onClick={() => setShowProfile(false)}
             >
               Close Profile
             </button>
-          </section>
+          </div>
         </div>
       )}
     </>
