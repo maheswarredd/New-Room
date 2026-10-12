@@ -603,29 +603,31 @@ await expense.save();
         );
       }
     }
-
-    await sendPushToUsers(
-      [expense.createdBy?._id].filter(Boolean),
-      {
-        title: action === 'approve'
-          ? 'Expense approved'
-          : 'Expense rejected',
-        body: action === 'approve'
-          ? `${expense.title} was approved.`
-          : `${expense.title} was rejected.${
-              expense.rejectionReason
-                ? ` Reason: ${expense.rejectionReason}`
-                : ''
-            }`,
-      },
-      {
-        type: `expense_${
-          action === 'approve' ? 'approved' : 'rejected'
+    // Notify the requesting member about approval or rejection.
+await sendPushToUsers(
+  [expense.createdBy?._id].filter(Boolean),
+  {
+    title: action === 'approve'
+      ? 'Expense approved'
+      : 'Expense rejected',
+    body: action === 'approve'
+      ? `${expense.title} was approved.`
+      : `${expense.title} was rejected.${
+          expense.rejectionReason
+            ? ` Reason: ${expense.rejectionReason}`
+            : ''
         }`,
-        expenseId: expense._id.toString(),
-        url: '/member/expenses',
-      }
-      // Notify all members when a Room Fund expense is approved.
+  },
+  {
+    type: `expense_${
+      action === 'approve' ? 'approved' : 'rejected'
+    }`,
+    expenseId: expense._id.toString(),
+    url: '/member/expenses',
+  }
+);
+
+// Notify all members when a Room Fund expense is approved.
 if (
   action === 'approve' &&
   expense.paymentSource === 'room_fund'
@@ -657,7 +659,6 @@ if (
     );
   }
 }
-    );
 
     return res.json({
       success: true,
