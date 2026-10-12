@@ -603,71 +603,69 @@ await expense.save();
         );
       }
     }
-   // Notify the requesting member about approval or rejection.
-try {
-  await sendPushToUsers(
-    [expense.createdBy?._id].filter(Boolean),
-    {
-      title: action === 'approve'
-        ? 'Expense Approved'
-        : 'Expense Rejected',
-      body: action === 'approve'
-        ? `${expense.title} was approved.`
-        : `${expense.title} was rejected.${
-            expense.rejectionReason
-              ? ` Reason: ${expense.rejectionReason}`
-              : ''
-          }`,
-    },
-    {
-      type: action === 'approve'
-        ? 'expense_approved'
-        : 'expense_rejected',
-      expenseId: expense._id.toString(),
-      url: '/member/expenses',
+       // Notify the requesting member about approval or rejection.
+    try {
+      await sendPushToUsers(
+        [expense.createdBy?._id].filter(Boolean),
+        {
+          title: action === 'approve'
+            ? 'Expense Approved'
+            : 'Expense Rejected',
+          body: action === 'approve'
+            ? `${expense.title} was approved.`
+            : `${expense.title} was rejected.${
+                expense.rejectionReason
+                  ? ` Reason: ${expense.rejectionReason}`
+                  : ''
+              }`,
+        },
+        {
+          type: action === 'approve'
+            ? 'expense_approved'
+            : 'expense_rejected',
+          expenseId: expense._id.toString(),
+          url: '/member/expenses',
+        }
+      );
+    } catch (error) {
+      console.error(
+        'Expense approval/rejection notification failed:',
+        error.message
+      );
     }
-  );
-} catch (error) {
-  console.error(
-    'Expense approval/rejection notification failed:',
-    error.message
-  );
-}
 
-// Notify all members when a Room Fund expense is approved.
-if (
-  action === 'approve' &&
-  expense.paymentSource === 'room_fund'
-) {
-  try {
-    const members = await User.find({
-      role: 'member',
-      isActive: true,
-    }).select('_id');
+    // Notify all members when a Room Fund expense is approved.
+    if (
+      action === 'approve' &&
+      expense.paymentSource === 'room_fund'
+    ) {
+      try {
+        const members = await User.find({
+          role: 'member',
+          isActive: true,
+        }).select('_id');
 
-    await sendPushToUsers(
-      members.map((member) => member._id),
-      {
-        title: 'Room Fund Expense Approved',
-        body: `${expense.title} - ₹${Number(
-          expense.amount
-        ).toFixed(2)} was approved.`,
-      },
-      {
-        type: 'room_fund_expense_approved',
-        expenseId: expense._id.toString(),
-        url: '/member/dashboard',
+        await sendPushToUsers(
+          members.map((member) => member._id),
+          {
+            title: 'Room Fund Expense Approved',
+            body: `${expense.title} - ₹${Number(
+              expense.amount
+            ).toFixed(2)} was approved.`,
+          },
+          {
+            type: 'room_fund_expense_approved',
+            expenseId: expense._id.toString(),
+            url: '/member/dashboard',
+          }
+        );
+      } catch (error) {
+        console.error(
+          'Room Fund expense notification failed:',
+          error.message
+        );
       }
-    );
-  } catch (error) {
-    console.error(
-      'Room Fund expense notification failed:',
-      error.message
-    );
-  }
-}
-}
-
+    }
     return res.json({
       success: true,
       message: `Expense ${
