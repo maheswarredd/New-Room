@@ -322,6 +322,39 @@ await sendPushToUsers(
       : '/member/payments',
   }
 );
+
+    // Notify all members when a Room Fund contribution is approved.
+if (
+  action === 'approve' &&
+  isRoomFundPayment
+) {
+  try {
+    const members = await User.find({
+      role: 'member',
+      isActive: true,
+    }).select('_id');
+
+    await sendPushToUsers(
+      members.map((member) => member._id),
+      {
+        title: 'Room Fund Updated',
+        body: `A Room Fund contribution of ₹${Number(
+          payment.amount
+        ).toFixed(2)} has been approved.`,
+      },
+      {
+        type: 'room_fund_updated',
+        paymentId: payment._id.toString(),
+        url: '/member/dashboard',
+      }
+    );
+  } catch (error) {
+    console.error(
+      'Room Fund update notification failed:',
+      error.message
+    );
+  }
+}
    
 
     return res.json({
