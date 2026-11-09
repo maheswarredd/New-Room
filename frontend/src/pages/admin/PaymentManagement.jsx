@@ -16,14 +16,13 @@ import {
   X,
   ArrowDownRight,
 } from 'lucide-react';
-// Get today's date using local timezone
 const getLocalDate = () => {
   const now = new Date();
   const offset = now.getTimezoneOffset() * 60000;
 
   return new Date(now.getTime() - offset)
     .toISOString()
-    .split('T')[0];
+    .slice(0, 16);
 };
 
 export default function PaymentManagement() {
@@ -264,14 +263,18 @@ export default function PaymentManagement() {
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
                 {payments.map((p) => {
-                  const pDate = new Date(p.createdAt || p.date).toLocaleString('en-IN', {
-                   day: '2-digit',
-                   month: 'short',
-                  year: 'numeric',
-                  hour: '2-digit',
-                 minute: '2-digit',
-                 hour12: true,
-                 });
+                  const pDate = p.date
+                 ? new Date(p.date).toLocaleString('en-IN', {
+                day: '2-digit',
+               month: 'short',
+              year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata',
+      })
+    : '-';
 
                   return (
                     <tr key={p._id} className="hover:bg-slate-50/60 transition">
