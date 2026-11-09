@@ -57,7 +57,65 @@ export default function MonthlyReports() {
       setLoading(false);
     }
   };
+// Individual carryover reset
+const handleResetMemberCarryover = async (member) => {
 
+  const confirmed = window.confirm(
+    `Reset ${member.name}'s carryover to ₹0 for ${selectedMonth}?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await api.post(
+      '/summary/reset-member-carryover',
+      {
+        memberId: member.id,
+        monthKey: selectedMonth,
+      }
+    );
+
+    showToast(res.data.message, 'success');
+
+    await fetchStatement(selectedMonth);
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message || 'Carryover reset failed',
+      'error'
+    );
+  }
+};
+
+
+// Reset all active members
+const handleResetAllCarryovers = async () => {
+
+  const confirmed = window.confirm(
+    `WARNING: Reset carryover to ₹0 for ALL active members for ${selectedMonth}?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await api.post(
+      '/summary/reset-all-carryovers',
+      {
+        monthKey: selectedMonth,
+      }
+    );
+
+    showToast(res.data.message, 'success');
+
+    await fetchStatement(selectedMonth);
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message || 'Reset failed',
+      'error'
+    );
+  }
+};
   const handlePrint = () => {
     window.print();
   };
