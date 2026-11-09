@@ -4,6 +4,7 @@ import Payment from '../models/Payment.js';
 import BalanceAdjustment from '../models/BalanceAdjustment.js';
 import RoomSettings from '../models/RoomSettings.js';
 import Task from '../models/Task.js';
+import CarryoverReset from '../models/CarryoverReset.js';
 import { sendDueEmail } from '../utils/email.js';
 
 // Helper to get all months from expenses/payments or defaults
@@ -23,6 +24,128 @@ export const getAvailableMonths = async (req, res) => {
     return res.status(200).json({ success: true, months: sorted, currentMonth: currentKey });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+// Reset carryover for an individual member
+export const resetMemberCarryover = async (req, res) => {
+  try {
+    const { memberId, monthKey } = req.body;
+
+    if (!memberId || !monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid member and month are required',
+      });
+    }
+
+    const member = await User.findOne({
+      _id: memberId,
+      role: 'member',
+      isActive: { $ne: false },
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Active member not found',
+      });
+    }
+
+    await CarryoverReset.findOneAndUpdate(
+      {
+        user: memberId,
+        monthKey,
+      },
+      {
+        $set: {
+          resetBy: req.user._id,
+          resetAt: new Date(),
+        },
+        $setOnInsert: {
+          user: memberId,
+          monthKey,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `${member.name} carryover reset to ₹0`,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+
+// Reset carryover for all active members
+export const resetAllCarryovers = async (req, res) => {
+  try {
+    const { monthKey } = req.body;
+
+    if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid month is required',
+      });
+    }
+
+    const members = await User.find({
+      role: 'member',
+      isActive: { $ne: false },
+    }).select('_id');
+
+    if (!members.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'No active members found',
+      });
+    }
+
+    const now = new Date();
+
+    const operations = members.map((member) => ({
+      updateOne: {
+        filter: {
+          user: member._id,
+          monthKey,
+        },
+        update: {
+          $set: {
+            resetBy: req.user._id,
+            resetAt: now,
+          },
+          $setOnInsert: {
+            user: member._id,
+            monthKey,
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+    await CarryoverReset.bulkWrite(operations);
+
+    res.status(200).json({
+      success: true,
+      message: `Carryover reset for ${members.length} active members`,
+      count: members.length,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -177,9 +300,17 @@ const prevPayments = await Payment.find({
   $or: [
     { approvalStatus: 'approved' },
     { approvalStatus: { $exists: false } },
-    ],
-    });
-    const prevAdjustments = await BalanceAdjustment.find({ monthKey: { $lt: targetMonth } });
+  ],
+});
+
+const prevAdjustments = await BalanceAdjustment.find({
+  monthKey: { $lt: targetMonth }
+});
+
+// Load carryover reset history
+const carryoverResets = await CarryoverReset.find({
+  monthKey: { $lte: targetMonth },
+});
 
      // Build per-member financial ledger
  const memberLedgers = members.map((member) => {
