@@ -73,10 +73,41 @@ export const createPayment = async (req, res) => {
       });
     }
 
-    const paymentDate = date ? new Date(date) : new Date();
-    const year = paymentDate.getFullYear();
-    const month = String(paymentDate.getMonth() + 1).padStart(2, '0');
-    const monthKey = `${year}-${month}`;
+    // Preserve the exact date selected by the user.
+// Do not let server timezone change the selected calendar date.
+const parseSelectedDate = (value) => {
+  if (!value) return new Date();
+
+  const match = String(value).match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
+  );
+
+  if (!match) {
+    throw new Error('Invalid payment date');
+  }
+
+  const [, year, month, day, hours = '12', minutes = '0'] = match;
+
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hours),
+    Number(minutes)
+  );
+};
+
+const paymentDate = parseSelectedDate(date);
+
+const year = String(
+  date ? date.substring(0, 4) : paymentDate.getFullYear()
+);
+
+const month = String(
+  date ? date.substring(5, 7) : paymentDate.getMonth() + 1
+).padStart(2, '0');
+
+const monthKey = `${year}-${month}`;
 
     let photoUrl = proofPhoto || '';
     if (req.file) {
