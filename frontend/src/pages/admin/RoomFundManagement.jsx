@@ -17,6 +17,16 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
+
+const getLocalDate = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - offset)
+    .toISOString()
+    .slice(0, 10);
+};
+
 export default function RoomFundManagement() {
   const { user, showToast } = useAuth();
 
@@ -69,16 +79,16 @@ export default function RoomFundManagement() {
 
   const [contributionAmount, setContributionAmount] = useState('');
   const [contributionDate, setContributionDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  getLocalDate()
+);
 
-  const [expenseForm, setExpenseForm] = useState({
-    title: '',
-    amount: '',
-    category: 'grocery',
-    date: new Date().toISOString().slice(0, 10),
-    description: '',
-  });
+ const [expenseForm, setExpenseForm] = useState({
+  title: '',
+  amount: '',
+  category: 'grocery',
+  date: getLocalDate(),
+  description: '',
+});
 
   useEffect(() => {
     loadMonths();
@@ -872,13 +882,13 @@ const handleAdminContribution = async (event) => {
         'success'
       );
 
-      setExpenseForm({
-        title: '',
-        amount: '',
-        category: 'grocery',
-        date: new Date().toISOString().slice(0, 10),
-        description: '',
-      });
+     setExpenseForm({
+  title: '',
+  amount: '',
+  category: 'grocery',
+  date: getLocalDate(),
+  description: '',
+});
 
       await loadFundData();
     } catch (error) {
