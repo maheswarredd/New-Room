@@ -172,12 +172,20 @@ export const updateMember = async (req, res) => {
       member.password = password;
     }
 
-    if (roomNo !== undefined) member.roomNo = roomNo.trim();
-    if (phone !== undefined) member.phone = phone.trim();
-    if (avatar !== undefined) member.avatar = avatar;
-    if (monthlyRentShare !== undefined) member.monthlyRentShare = Number(monthlyRentShare) || 0;
-    if (initialBalance !== undefined) member.initialBalance = Number(initialBalance) || 0;
-    if (isActive !== undefined) member.isActive = Boolean(isActive);
+   if (roomNo !== undefined) member.roomNo = roomNo.trim();
+if (phone !== undefined) member.phone = phone.trim();
+if (avatar !== undefined) member.avatar = avatar;
+if (monthlyRentShare !== undefined) {
+  member.monthlyRentShare = Number(monthlyRentShare) || 0;
+}
+if (initialBalance !== undefined) {
+  member.initialBalance = Number(initialBalance) || 0;
+}
+
+// Correctly handle Boolean and string values
+if (isActive !== undefined) {
+  member.isActive = isActive === true || isActive === 'true';
+}
 
     await member.save();
 
