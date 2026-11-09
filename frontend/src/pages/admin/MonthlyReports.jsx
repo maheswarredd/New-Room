@@ -160,6 +160,12 @@ const handleResetAllCarryovers = async () => {
             <Printer className="w-3.5 h-3.5" />
             <span>Print Statement</span>
           </button>
+          <button
+  onClick={handleResetAllCarryovers}
+  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md"
+>
+  Reset All Carryovers ₹0
+</button>
         </div>
       </div>
 
@@ -219,12 +225,13 @@ const handleResetAllCarryovers = async () => {
                     <th className="py-3 px-4">Direct Payments (E)</th>
                     <th className="py-3 px-4">Adjustments (F)</th>
                     <th className="py-3 px-4 text-right">Net Balance (A-B-C+D+E+F)</th>
+                    <th className="py-3 px-4 text-center">Carryover Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {ledgers.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="py-8 text-center text-slate-400">
+                      <td colSpan="9" className="py-8 text-center text-slate-400">
                         No member records available for this month.
                       </td>
                     </tr>
@@ -239,6 +246,14 @@ const handleResetAllCarryovers = async () => {
                               {row.member.roomNo ? `Room ${row.member.roomNo}` : row.member.email}
                             </span>
                           </td>
+                          <td className="py-3 px-4 text-center">
+  <button
+    onClick={() => handleResetMemberCarryover(row.member)}
+    className="px-3 py-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold whitespace-nowrap"
+  >
+    Reset ₹0
+  </button>
+</td>
 
                           <td className="py-3.5 px-4 text-slate-600">
                             {currency}{row.carryForward.toLocaleString()}
