@@ -222,9 +222,9 @@ type: 'Contribution',
 title: payment.fromUser?.name || 'Room Fund contribution',
 amount: Number(payment.amount || 0),
 timestamp:
-payment.reviewedAt ||
-payment.createdAt ||
-payment.date,
+  payment.date ||
+  payment.createdAt ||
+  payment.reviewedAt,
 status: 'Approved',
 endpoint: 'payments',
 })),
@@ -235,9 +235,9 @@ type: 'Expense',
 title: expense.title || 'Room Fund expense',
 amount: Number(expense.amount || 0),
 timestamp:
-expense.reviewedAt ||
-expense.createdAt ||
-expense.date,
+  expense.date ||
+  expense.createdAt ||
+  expense.reviewedAt,
 status: 'Approved',
 endpoint: 'expenses',
 })),
@@ -1347,20 +1347,21 @@ const handleAdminContribution = async (event) => {
             </td>
 
             <td className="p-3 whitespace-nowrap">
-              {item.timestamp
-                ? new Date(item.timestamp).toLocaleString(
-                    'en-IN',
-                    {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                      hour12: true,
-                    }
-                  )
-                : '-'}
+             {item.timestamp
+  ? new Date(item.timestamp).toLocaleString(
+      'en-IN',
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata',
+      }
+    )
+  : '-'}            
             </td>
 
             <td className="p-3 text-green-700">
