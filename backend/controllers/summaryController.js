@@ -407,7 +407,103 @@ const totalShareThisMonth =
         .reduce((sum, a) => sum + a.adjustmentAmount, 0);
 
       // 7. Calculate previous carryover
-      let carryForward = member.initialBalance || 0;
+     // 7. Calculate previous carryover
+
+// Find latest reset for this member
+const memberReset = carryoverResets
+  .filter(
+    (r) => r.user.toString() === memberIdStr
+  )
+  .sort(
+    (a, b) => b.monthKey.localeCompare(a.monthKey)
+  )[0];
+
+const resetMonth = memberReset?.monthKey || null;
+
+// Start from zero if reset exists
+let carryForward = memberReset
+  ? 0
+  : Number(member.initialBalance || 0);
+
+
+// Previous expenses paid
+const prevExpensesPaid = prevExpenses
+  .filter(
+    (e) =>
+      e.paymentSource !== 'room_fund' &&
+      e.paidBy &&
+      e.paidBy.toString() === memberIdStr &&
+      (!resetMonth || e.monthKey >= resetMonth)
+  )
+  .reduce(
+    (sum, e) => sum + Number(e.amount || 0),
+    0
+  );
+
+
+// Previous direct payments
+const prevDirectPaid = prevPayments
+  .filter(
+    (p) =>
+      p.fromUser &&
+      p.fromUser.toString() === memberIdStr &&
+      p.paymentType !== 'room_fund' &&
+      (!resetMonth || p.monthKey >= resetMonth)
+  )
+  .reduce(
+    (sum, p) => sum + Number(p.amount || 0),
+    0
+  );
+
+
+// Previous expense shares
+let prevShare = 0;
+
+prevExpenses.forEach((e) => {
+
+  if (e.paymentSource === 'room_fund') {
+    return;
+  }
+
+  // Ignore transactions before reset month
+  if (resetMonth && e.monthKey < resetMonth) {
+    return;
+  }
+
+  const s = e.splitAmong.find(
+    (item) =>
+      item.user &&
+      item.user.toString() === memberIdStr
+  );
+
+  if (s) {
+    prevShare += Number(s.amount || 0);
+  } else if (members.length > 0) {
+    prevShare += Math.round(
+      (Number(e.amount || 0) / members.length) * 100
+    ) / 100;
+  }
+});
+
+
+// Previous manual adjustments
+const prevAdj = prevAdjustments
+  .filter(
+    (a) =>
+      a.user.toString() === memberIdStr &&
+      (!resetMonth || a.monthKey >= resetMonth)
+  )
+  .reduce(
+    (sum, a) => sum + Number(a.adjustmentAmount || 0),
+    0
+  );
+
+
+// Final carryover calculation
+carryForward +=
+  (prevExpensesPaid + prevDirectPaid) -
+  prevShare +
+  prevAdj;
 
       // Add previous months' paid
       const prevExpensesPaid = prevExpenses
