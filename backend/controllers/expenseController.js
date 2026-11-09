@@ -759,7 +759,7 @@ export const updateExpense = async (req, res) => {
 
     if (date) {
   const match = String(date).match(
-    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/
   );
 
   if (!match) {
@@ -769,16 +769,28 @@ export const updateExpense = async (req, res) => {
     });
   }
 
-  const [, year, month, day, hours = '12', minutes = '0'] = match;
+  const [
+    ,
+    year,
+    month,
+    day,
+    hours = '12',
+    minutes = '00',
+    seconds = '00',
+  ] = match;
 
-  expense.date = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hours),
-    Number(minutes)
+  const selectedDate = new Date(
+    `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+05:30`
   );
 
+  if (Number.isNaN(selectedDate.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid expense date',
+    });
+  }
+
+  expense.date = selectedDate;
   expense.monthKey = `${year}-${month}`;
 }
     if (req.user.role === 'admin' && paidBy) {
