@@ -19,6 +19,14 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react';
+const getLocalDateTime = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - offset)
+    .toISOString()
+    .slice(0, 16);
+};
 
 export default function ExpenseManagement() {
   const { user, showToast } = useAuth();
@@ -52,7 +60,7 @@ export default function ExpenseManagement() {
     title: '',
     amount: '',
     category: 'grocery',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateTime(),
     paidBy: '',
     splitType: 'equal',
     description: '',
@@ -169,7 +177,7 @@ export default function ExpenseManagement() {
       title: '',
       amount: '',
       category: 'grocery',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateTime(),
       paidBy: members[0]?._id || 'ADMIN_FUND',
       splitType: 'equal',
       description: '',
@@ -192,7 +200,11 @@ export default function ExpenseManagement() {
       title: expense.title,
       amount: expense.amount,
       category: expense.category,
-      date: new Date(expense.date).toISOString().split('T')[0],
+      date: expense.date
+  ? new Date(expense.date).toLocaleString('sv-SE', {
+      timeZone: 'Asia/Kolkata',
+    }).replace(' ', 'T').slice(0, 16)
+  : getLocalDateTime(),
       paidBy: expense.paidBy?._id || expense.paidBy,
       splitType: expense.splitType || 'equal',
       description: expense.description || '',
@@ -537,16 +549,18 @@ export default function ExpenseManagement() {
               </thead>
              <tbody className="divide-y divide-slate-100 font-medium">
   {expenses.map((expense) => {
-    const expenseDate = new Date(
-    expense.createdAt || expense.date
-    ).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-   hour: '2-digit',
-   minute: '2-digit',
-   hour12: true,
-   });
+    const expenseDate = expense.date
+  ? new Date(expense.date).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    })
+  : '-';
 
     return (
       <tr
