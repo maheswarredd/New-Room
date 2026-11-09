@@ -12,6 +12,14 @@ import {
   X,
   CreditCard,
 } from 'lucide-react';
+const getLocalDateTime = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - offset)
+    .toISOString()
+    .slice(0, 16);
+};
 
 export default function MyExpenses() {
   const { user, showToast } = useAuth();
@@ -31,7 +39,7 @@ const [roomFundLoading, setRoomFundLoading] = useState(false);
     title: '',
     amount: '',
     category: 'grocery',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateTime(),
     description: '',
     receiptPhoto: '',
   });
@@ -124,7 +132,7 @@ useEffect(() => {
       title: '',
       amount: '',
       category: 'grocery',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateTime(),
       description: '',
       receiptPhoto: '',
     });
@@ -301,14 +309,18 @@ if (res.data.success) {
                   return (
                     <tr key={expense._id} className="hover:bg-slate-50/60 transition">
                       <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
-                        {new Date(expense.createdAt || expense.date).toLocaleString('en-IN', {
-                         day: '2-digit',
-                         month: 'short',
-                         year: 'numeric',
-                         hour: '2-digit',
-                         minute: '2-digit',
-                         hour12: true,
-                         })}
+                        {expense.date
+  ? new Date(expense.date).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    })
+  : '-'}
                       </td>
 
                       <td className="py-3 px-4">
