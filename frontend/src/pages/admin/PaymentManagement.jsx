@@ -16,6 +16,15 @@ import {
   X,
   ArrowDownRight,
 } from 'lucide-react';
+// Get today's date using local timezone
+const getLocalDate = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - offset)
+    .toISOString()
+    .split('T')[0];
+};
 
 export default function PaymentManagement() {
   const { user, showToast } = useAuth();
@@ -38,7 +47,7 @@ export default function PaymentManagement() {
     amount: '',
     paymentType: 'rent',
     paymentMethod: 'upi',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDate(),
     proofPhoto: '',
     notes: '',
   });
@@ -96,7 +105,7 @@ export default function PaymentManagement() {
       amount: '',
       paymentType: 'rent',
       paymentMethod: 'upi',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDate(),
       proofPhoto: '',
       notes: '',
     });
