@@ -35,7 +35,11 @@ export const getMonthlySummary = async (req, res) => {
     const targetMonth = month || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
     // Load active members and settings
-    const members = await User.find({ role: 'member' }).sort({ name: 1 });
+    // Load ONLY active members for dashboard and financial calculations
+const members = await User.find({
+  role: 'member',
+  isActive: { $ne: false },
+}).sort({ name: 1 });
     const settings = (await RoomSettings.findOne()) || {
       roomName: 'Room Manager',
       currency: '₹',
