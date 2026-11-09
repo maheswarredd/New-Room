@@ -196,41 +196,48 @@ if (paymentSource !== 'room_fund') {
   }
 }
 
-    const parseSelectedDate = (value) => {
+    // Parse selected expense date/time using India timezone.
+const parseSelectedDate = (value) => {
   if (!value) return new Date();
 
   const match = String(value).match(
-    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?$/
   );
 
   if (!match) {
     throw new Error('Invalid expense date');
   }
 
-  const [, year, month, day, hours = '12', minutes = '0'] = match;
+  const [
+    ,
+    year,
+    month,
+    day,
+    hours = '12',
+    minutes = '00',
+    seconds = '00',
+  ] = match;
 
-  return new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hours),
-    Number(minutes)
+  const expenseDate = new Date(
+    `${year}-${month}-${day}T${hours}:${minutes}:${seconds}+05:30`
   );
+
+  if (Number.isNaN(expenseDate.getTime())) {
+    throw new Error('Invalid expense date');
+  }
+
+  return expenseDate;
 };
 
 const expenseDate = parseSelectedDate(date);
 
-const year = date
-  ? date.substring(0, 4)
-  : String(expenseDate.getFullYear());
-
-const month = String(
-  date
-    ? date.substring(5, 7)
-    : expenseDate.getMonth() + 1
-).padStart(2, '0');
-
-const monthKey = `${year}-${month}`;
+const monthKey = date
+  ? String(date).substring(0, 7)
+  : new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+    }).format(new Date());
     // ----------------------------------------------------
 // ROOM COMMON FUND VALIDATION
 // ----------------------------------------------------
