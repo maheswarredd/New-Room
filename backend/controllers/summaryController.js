@@ -505,58 +505,7 @@ carryForward +=
   prevShare +
   prevAdj;
 
-      // Add previous months' paid
-      const prevExpensesPaid = prevExpenses
-  .filter(
-    (e) =>
-      e.paymentSource !== 'room_fund' &&
-      e.paidBy &&
-      e.paidBy.toString() === memberIdStr
-  )
-  .reduce(
-    (sum, e) => sum + Number(e.amount || 0),
-    0
-  );
-      const prevDirectPaid = prevPayments
-  .filter(
-    (p) =>
-      p.fromUser &&
-      p.fromUser.toString() === memberIdStr
-  )
-  .reduce(
-    (sum, p) => sum + Number(p.amount || 0),
-    0
-  );
-
-      // Deduct previous months' shares
-      let prevShare = 0;
-
-prevExpenses.forEach((e) => {
-  // Never add Room Fund expenses to member carry-forward dues.
-  if (e.paymentSource === 'room_fund') {
-    return;
-  }
-
-  const s = e.splitAmong.find(
-    (item) =>
-      item.user &&
-      item.user.toString() === memberIdStr
-  );
-
-  if (s) {
-    prevShare += Number(s.amount || 0);
-  } else if (members.length > 0) {
-    prevShare += Math.round(
-      (Number(e.amount || 0) / members.length) * 100
-    ) / 100;
-  }
-});
-      const prevAdj = prevAdjustments
-        .filter((a) => a.user.toString() === memberIdStr)
-        .reduce((sum, a) => sum + a.adjustmentAmount, 0);
-
-      carryForward += (prevExpensesPaid + prevDirectPaid) - prevShare + prevAdj;
-
+     
       // Net Balance for current month:
       // balance = carryForward + totalPaidThisMonth - totalShareThisMonth + adjustmentAmountThisMonth
       // Positive: member has advance / is owed money
