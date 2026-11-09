@@ -196,10 +196,41 @@ if (paymentSource !== 'room_fund') {
   }
 }
 
-    const expenseDate = date ? new Date(date) : new Date();
-    const year = expenseDate.getFullYear();
-    const month = String(expenseDate.getMonth() + 1).padStart(2, '0');
-    const monthKey = `${year}-${month}`;
+    const parseSelectedDate = (value) => {
+  if (!value) return new Date();
+
+  const match = String(value).match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
+  );
+
+  if (!match) {
+    throw new Error('Invalid expense date');
+  }
+
+  const [, year, month, day, hours = '12', minutes = '0'] = match;
+
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hours),
+    Number(minutes)
+  );
+};
+
+const expenseDate = parseSelectedDate(date);
+
+const year = date
+  ? date.substring(0, 4)
+  : String(expenseDate.getFullYear());
+
+const month = String(
+  date
+    ? date.substring(5, 7)
+    : expenseDate.getMonth() + 1
+).padStart(2, '0');
+
+const monthKey = `${year}-${month}`;
     // ----------------------------------------------------
 // ROOM COMMON FUND VALIDATION
 // ----------------------------------------------------
@@ -720,12 +751,29 @@ export const updateExpense = async (req, res) => {
     }
 
     if (date) {
-      expense.date = new Date(date);
-      const year = expense.date.getFullYear();
-      const month = String(expense.date.getMonth() + 1).padStart(2, '0');
-      expense.monthKey = `${year}-${month}`;
-    }
+  const match = String(date).match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
+  );
 
+  if (!match) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid expense date',
+    });
+  }
+
+  const [, year, month, day, hours = '12', minutes = '0'] = match;
+
+  expense.date = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hours),
+    Number(minutes)
+  );
+
+  expense.monthKey = `${year}-${month}`;
+}
     if (req.user.role === 'admin' && paidBy) {
       expense.paidBy = paidBy;
     }
