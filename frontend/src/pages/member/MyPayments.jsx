@@ -12,6 +12,15 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 
+const getLocalDateTime = () => {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60000;
+
+  return new Date(now.getTime() - offset)
+    .toISOString()
+    .slice(0, 16);
+};
+
 export default function MyPayments() {
   const { user, showToast } = useAuth();
   const [payments, setPayments] = useState([]);
@@ -25,7 +34,7 @@ export default function MyPayments() {
     amount: '',
     paymentType: 'room_fund',
     paymentMethod: 'upi',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDateTime(),
     notes: '',
     proofPhoto: '',
   });
@@ -73,7 +82,7 @@ export default function MyPayments() {
       amount: '',
       paymentType: 'room_fund',
       paymentMethod: 'upi',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDateTime(),
       notes: '',
       proofPhoto: '',
     });
