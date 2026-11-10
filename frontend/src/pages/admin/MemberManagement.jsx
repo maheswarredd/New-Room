@@ -18,6 +18,8 @@ import {
   XCircle,
   X,
   History,
+  Wallet,
+RefreshCw,
 } from 'lucide-react';
 
 export default function MemberManagement() {
@@ -37,16 +39,17 @@ export default function MemberManagement() {
 
   // Form states
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    roomNo: '',
-    phone: '',
-    avatar: '',
-    monthlyRentShare: 0,
-    initialBalance: 0,
-    isActive: true,
-  });
+  name: '',
+  email: '',
+  password: '',
+  roomNo: '',
+  phone: '',
+  avatar: '',
+  monthlyRentShare: 0,
+  initialBalance: 0,
+  accountBalance: 0,
+  isActive: true,
+});
 
   const [adjustData, setAdjustData] = useState({
     monthKey: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`,
