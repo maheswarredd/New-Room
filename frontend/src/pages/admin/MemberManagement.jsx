@@ -57,7 +57,19 @@ export default function MemberManagement() {
     reason: '',
   });
 
-  const [actionLoading, setActionLoading] = useState(false);
+  // Carryover Manager
+const [isCarryoverManagerOpen, setIsCarryoverManagerOpen] =
+  useState(false);
+
+const [carryoverRows, setCarryoverRows] = useState([]);
+
+const [carryoverLoading, setCarryoverLoading] = useState(false);
+
+const [carryoverMonth, setCarryoverMonth] = useState(
+  `${new Date().getFullYear()}-${String(
+    new Date().getMonth() + 1
+  ).padStart(2, '0')}`
+);
 
   useEffect(() => {
     fetchMembers();
@@ -198,6 +210,170 @@ export default function MemberManagement() {
       setActionLoading(false);
     }
   };
+  // Open carryover manager
+const handleOpenCarryoverManager = async () => {
+  setIsCarryoverManagerOpen(true);
+  await fetchCarryoverRows();
+};
+
+
+// Load all members and their carryover information
+const fetchCarryoverRows = async () => {
+  try {
+    setCarryoverLoading(true);
+
+    const [carryoverRes, summaryRes] = await Promise.all([
+      api.get(`/members/carryovers?monthKey=${carryoverMonth}`),
+      api.get(`/summary/monthly?month=${carryoverMonth}`)
+    ]);
+
+    const ledgers = summaryRes.data.memberLedgers || [];
+
+    const ledgerMap = new Map(
+      ledgers.map((item) => [
+        item.member.id.toString(),
+        item
+      ])
+    );
+
+    const rows = (carryoverRes.data.members || []).map((member) => {
+      const ledger = ledgerMap.get(member._id.toString());
+
+      return {
+        ...member,
+        carryForward: ledger?.carryForward ?? 0,
+        netBalance: ledger?.netBalance ?? 0,
+        carryoverAdjustment: member.carryoverAdjustment ?? 0
+      };
+    });
+
+    setCarryoverRows(rows);
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message ||
+      'Failed to load carryover details',
+      'error'
+    );
+  } finally {
+    setCarryoverLoading(false);
+  }
+};
+
+
+// Change individual carryover input
+const handleCarryoverInputChange = (memberId, value) => {
+  setCarryoverRows((prev) =>
+    prev.map((member) =>
+      member._id === memberId
+        ? {
+            ...member,
+            carryoverAdjustment: value
+          }
+        : member
+    )
+  );
+};
+
+
+// Add / Edit carryover
+const handleSaveCarryover = async (member) => {
+  try {
+    setActionLoading(true);
+
+    const amount = Number(member.carryoverAdjustment);
+
+    if (!Number.isFinite(amount)) {
+      showToast('Enter a valid carryover amount', 'error');
+      return;
+    }
+
+    const res = await api.put(
+      `/members/${member._id}/carryover`,
+      {
+        monthKey: carryoverMonth,
+        adjustmentAmount: amount,
+        reason: 'Admin managed carryover'
+      }
+    );
+
+    if (res.data.success) {
+      showToast('Carryover saved successfully', 'success');
+      await fetchCarryoverRows();
+      await fetchMembers();
+    }
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message || 'Failed to save carryover',
+      'error'
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+
+// Remove carryover adjustment
+const handleRemoveCarryover = async (member) => {
+  if (!window.confirm(
+    `Remove carryover adjustment for ${member.name}?`
+  )) return;
+
+  try {
+    setActionLoading(true);
+
+    await api.delete(
+      `/members/${member._id}/carryover?monthKey=${carryoverMonth}`
+    );
+
+    showToast('Carryover adjustment removed', 'success');
+
+    await fetchCarryoverRows();
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message || 'Failed to remove carryover',
+      'error'
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+
+// Reset one member carryover to zero
+const handleResetMemberCarryover = async (member) => {
+  if (!window.confirm(
+    `Are you sure you want to reset ${member.name}'s carryover to ₹0?`
+  )) return;
+
+  try {
+    setActionLoading(true);
+
+    const res = await api.post(
+      `/members/${member._id}/carryover/reset`,
+      {
+        monthKey: carryoverMonth
+      }
+    );
+
+    if (res.data.success) {
+      showToast(res.data.message, 'success');
+
+      await fetchCarryoverRows();
+      await fetchMembers();
+    }
+
+  } catch (error) {
+    showToast(
+      error.response?.data?.message || 'Failed to reset carryover',
+      'error'
+    );
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const filteredMembers = members.filter((m) => {
     const q = searchTerm.toLowerCase();
@@ -350,11 +526,37 @@ export default function MemberManagement() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Initial / Carried Balance:</span>
-                    <span className={`font-bold ${member.initialBalance >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                      {member.initialBalance >= 0 ? `+₹${member.initialBalance}` : `-₹${Math.abs(member.initialBalance)}`}
-                    </span>
-                  </div>
+  <span className="text-slate-400">Initial / Carried Balance:</span>
+
+  <span className={`font-bold ${
+    Number(member.initialBalance || 0) >= 0
+      ? 'text-emerald-700'
+      : 'text-rose-700'
+  }`}>
+    {Number(member.initialBalance || 0) >= 0
+      ? `+₹${Number(member.initialBalance || 0).toLocaleString('en-IN')}`
+      : `-₹${Math.abs(Number(member.initialBalance || 0)).toLocaleString('en-IN')}`}
+  </span>
+</div>
+
+{/* Account Balance */}
+<div className="flex items-center justify-between pt-2 border-t border-slate-100">
+
+  <span className="text-slate-500 flex items-center gap-1">
+    <Wallet className="w-3.5 h-3.5" />
+    Account Balance:
+  </span>
+
+  <span className={`font-black ${
+    Number(member.accountBalance || 0) >= 0
+      ? 'text-emerald-700'
+      : 'text-rose-700'
+  }`}>
+    ₹{Number(member.accountBalance || 0).toLocaleString('en-IN')}
+  </span>
+
+</div>
+                  
                 </div>
               </div>
 
@@ -579,29 +781,61 @@ export default function MemberManagement() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Monthly Rent Share (₹)</label>
-                  <input
-                    type="number"
-                    value={formData.monthlyRentShare}
-                    onChange={(e) => setFormData({ ...formData, monthlyRentShare: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Account Status</label>
-                  <select
-                    value={formData.isActive ? 'true' : 'false'}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="true">Active (Can Login)</option>
-                    <option value="false">Disabled (Blocked)</option>
-                  </select>
-                </div>
-              </div>
+             <div className="grid grid-cols-2 gap-3">
+  <div>
+    <label className="block font-bold text-slate-700 mb-1">
+      Monthly Rent Share (₹)
+    </label>
+    <input
+      type="number"
+      min="0"
+      value={formData.monthlyRentShare}
+      onChange={(e) =>
+        setFormData({ ...formData, monthlyRentShare: e.target.value })
+      }
+      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    />
+  </div>
 
+  <div>
+    <label className="block font-bold text-slate-700 mb-1">
+      Account Status
+    </label>
+    <select
+      value={formData.isActive ? 'true' : 'false'}
+      onChange={(e) =>
+        setFormData({
+          ...formData,
+          isActive: e.target.value === 'true',
+        })
+      }
+      className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    >
+      <option value="true">Active (Can Login)</option>
+      <option value="false">Disabled (Blocked)</option>
+    </select>
+  </div>
+</div>
+
+{/* Account Balance */}
+<div>
+  <label className="block font-bold text-slate-700 mb-1">
+    Account Balance (₹)
+  </label>
+  <input
+    type="number"
+    step="0.01"
+    value={formData.accountBalance}
+    onChange={(e) =>
+      setFormData({ ...formData, accountBalance: e.target.value })
+    }
+    placeholder="Enter account balance"
+    className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  />
+  <p className="text-[11px] text-slate-400 mt-1">
+    Admin only: Update this member's account balance.
+  </p>
+</div>
               <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
                 <button
                   type="button"
