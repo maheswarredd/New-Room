@@ -733,30 +733,66 @@ const money = (amount) =>
           <h1>Room Fund Monthly Ledger</h1>
           <p><strong>Selected Month:</strong> ${escapeHtml(selectedMonth)}</p>
 
-          <div class="summary">
+                    <div class="summary">
+
+            {/* Room Fund Management Summary */}
+
+            <div class="card">
+              Total Room Fund
+              <div class="amount credit">
+                ${fmt(totalFund)}
+              </div>
+            </div>
+
+            <div class="card">
+              Used Room Fund
+              <div class="amount debit">
+                ${fmt(usedFund)}
+              </div>
+            </div>
+
+            <div class="card">
+              Remaining Room Fund
+              <div class="amount ${
+                remainingFund < 0 ? 'negative' : 'positive'
+              }">
+                ${fmt(remainingFund)}
+              </div>
+            </div>
+
+            {/* Monthly Ledger Summary */}
+
             <div class="card">
               Opening Balance
-              <div class="amount">${fmt(report.openingBalance)}</div>
+              <div class="amount">
+                ${fmt(report.openingBalance)}
+              </div>
             </div>
 
             <div class="card">
               Total Contributions
-              <div class="amount credit">${fmt(report.totalCredits)}</div>
+              <div class="amount credit">
+                ${fmt(report.totalCredits)}
+              </div>
             </div>
 
             <div class="card">
               Total Expenses
-              <div class="amount debit">${fmt(report.totalDebits)}</div>
+              <div class="amount debit">
+                ${fmt(report.totalDebits)}
+              </div>
             </div>
 
             <div class="card">
               Closing Balance
               <div class="amount ${
                 report.closingBalance < 0 ? 'negative' : 'positive'
-              }">${fmt(report.closingBalance)}</div>
+              }">
+                ${fmt(report.closingBalance)}
+              </div>
             </div>
-          </div>
 
+          </div>
           <h2>Daily Summary</h2>
           <table>
             <thead>
