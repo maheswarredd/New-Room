@@ -12,14 +12,23 @@ const balanceAdjustmentSchema = new mongoose.Schema(
       required: true, // "YYYY-MM"
     },
     adjustmentAmount: {
-      type: Number,
-      required: true, // positive adds credit, negative adds debit/penalty
-    },
-    reason: {
-      type: String,
-      required: [true, 'Reason for balance adjustment is required'],
-      trim: true,
-    },
+  type: Number,
+  required: true,
+},
+
+// general = existing adjustments
+// carryover = admin-managed carryover adjustments
+adjustmentType: {
+  type: String,
+  enum: ['general', 'carryover'],
+  default: 'general',
+},
+
+reason: {
+  type: String,
+  required: [true, 'Reason for balance adjustment is required'],
+  trim: true,
+},
     adjustedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
