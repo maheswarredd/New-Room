@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { User, Lock, Phone, Mail, Home, Save, CheckCircle } from 'lucide-react';
+import {
+  User,
+  Lock,
+  Phone,
+  Mail,
+  Home,
+  Save,
+  CheckCircle,
+  Wallet
+} from 'lucide-react';
 
 export default function MyProfile() {
   const { user, updateUser, showToast } = useAuth();
@@ -12,7 +21,9 @@ export default function MyProfile() {
     newPassword: '',
     confirmPassword: '',
   });
-  const [loading, setLoading] = useState(false);
+  const [accountBalance, setAccountBalance] = useState(0);
+
+const [balanceLoading, setBalanceLoading] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +102,40 @@ export default function MyProfile() {
             </div>
           </div>
         </div>
+
+        {/* Member Account Balance - Read Only */}
+        {user?.role === 'member' && (
+          <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold text-slate-500">
+                  MY ACCOUNT BALANCE
+                </p>
+
+                <h3
+                  className={`mt-2 text-2xl font-black ${
+                    Number(user?.accountBalance || 0) >= 0
+                      ? 'text-emerald-700'
+                      : 'text-rose-700'
+                  }`}
+                >
+                  ₹{Number(user?.accountBalance || 0).toLocaleString('en-IN', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </h3>
+
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Latest balance updated by Admin
+                </p>
+              </div>
+
+              <div className="w-12 h-12 rounded-xl bg-white border border-indigo-100 flex items-center justify-center">
+                <Wallet className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5 text-xs">
           <div>
