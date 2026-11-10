@@ -44,10 +44,17 @@ const userSchema = new mongoose.Schema(
       default: 0,
     },
     initialBalance: {
-      type: Number,
-      default: 0, // positive means advance, negative means pending dues
-    },
-    isActive: {
+  type: Number,
+  default: 0,
+},
+
+// Admin-managed account balance
+accountBalance: {
+  type: Number,
+  default: 0,
+},
+
+isActive: {
       type: Boolean,
       default: true,
     },
