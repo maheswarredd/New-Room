@@ -3,6 +3,7 @@ import BalanceAdjustment from '../models/BalanceAdjustment.js';
 import Expense from '../models/Expense.js';
 import Payment from '../models/Payment.js';
 import Task from '../models/Task.js';
+import CarryoverReset from '../models/CarryoverReset.js';
 import { sendBrevoEmail } from '../utils/email.js';
 
 // @desc    Get all members (Admin gets full detail; Members get basic list for selection/tasks)
@@ -55,7 +56,17 @@ export const getMemberById = async (req, res) => {
 // @access  Private (Admin)
 export const createMember = async (req, res) => {
   try {
-    const { name, email, password, roomNo, phone, avatar, monthlyRentShare, initialBalance } = req.body;
+    const {
+  name,
+  email,
+  password,
+  roomNo,
+  phone,
+  avatar,
+  monthlyRentShare,
+  initialBalance,
+  accountBalance
+} = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -90,6 +101,7 @@ export const createMember = async (req, res) => {
       avatar: avatar || '',
       monthlyRentShare: Number(monthlyRentShare) || 0,
       initialBalance: Number(initialBalance) || 0,
+      accountBalance: Number(accountBalance) || 0,
       isActive: true,
     });
 
@@ -146,7 +158,18 @@ export const createMember = async (req, res) => {
 export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password, roomNo, phone, avatar, monthlyRentShare, initialBalance, isActive } = req.body;
+    const {
+  name,
+  email,
+  password,
+  roomNo,
+  phone,
+  avatar,
+  monthlyRentShare,
+  initialBalance,
+  accountBalance,
+  isActive
+} = req.body;
 
     const member = await User.findById(id);
     if (!member || member.role !== 'member') {
@@ -180,6 +203,18 @@ if (monthlyRentShare !== undefined) {
 }
 if (initialBalance !== undefined) {
   member.initialBalance = Number(initialBalance) || 0;
+}
+    if (accountBalance !== undefined) {
+  const parsedBalance = Number(accountBalance);
+
+  if (!Number.isFinite(parsedBalance)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid account balance',
+    });
+  }
+
+  member.accountBalance = parsedBalance;
 }
 
 // Correctly handle Boolean and string values
@@ -263,3 +298,264 @@ export const adjustBalance = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+// ==========================================
+// ADMIN: GET ALL MEMBERS CARRYOVER DATA
+// ==========================================
+
+export const getCarryoverManagement = async (req, res) => {
+  try {
+    const { monthKey } = req.query;
+
+    if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid month is required',
+      });
+    }
+
+    const members = await User.find({
+      role: 'member',
+    })
+      .select('name email roomNo avatar initialBalance accountBalance isActive')
+      .sort({ name: 1 });
+
+    const adjustments = await BalanceAdjustment.find({
+      monthKey,
+      adjustmentType: 'carryover',
+    });
+
+    const adjustmentMap = new Map(
+      adjustments.map((item) => [
+        item.user.toString(),
+        item
+      ])
+    );
+
+    const data = members.map((member) => {
+      const adjustment = adjustmentMap.get(
+        member._id.toString()
+      );
+
+      return {
+        ...member.toObject(),
+        carryoverAdjustment: adjustment
+          ? adjustment.adjustmentAmount
+          : 0,
+        adjustmentId: adjustment?._id || null,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      monthKey,
+      members: data,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: ADD / EDIT MEMBER CARRYOVER
+// ==========================================
+
+export const saveMemberCarryover = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const {
+      monthKey,
+      adjustmentAmount,
+      reason,
+    } = req.body;
+
+    if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid month is required',
+      });
+    }
+
+    const amount = Number(adjustmentAmount);
+
+    if (
+      adjustmentAmount === undefined ||
+      adjustmentAmount === null ||
+      adjustmentAmount === '' ||
+      !Number.isFinite(amount)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Enter a valid carryover amount',
+      });
+    }
+
+    const member = await User.findOne({
+      _id: id,
+      role: 'member',
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found',
+      });
+    }
+
+    const adjustment = await BalanceAdjustment.findOneAndUpdate(
+      {
+        user: id,
+        monthKey,
+        adjustmentType: 'carryover',
+      },
+      {
+        $set: {
+          adjustmentAmount: amount,
+          reason: reason || 'Admin managed carryover',
+          adjustedBy: req.user._id,
+        },
+        $setOnInsert: {
+          user: id,
+          monthKey,
+          adjustmentType: 'carryover',
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Member carryover saved successfully',
+      adjustment,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: REMOVE MEMBER CARRYOVER
+// ==========================================
+
+export const removeMemberCarryover = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { monthKey } = req.query;
+
+    if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid month is required',
+      });
+    }
+
+    const member = await User.findOne({
+      _id: id,
+      role: 'member',
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found',
+      });
+    }
+
+    await BalanceAdjustment.deleteOne({
+      user: id,
+      monthKey,
+      adjustmentType: 'carryover',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Carryover adjustment removed successfully',
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// ==========================================
+// ADMIN: RESET INDIVIDUAL MEMBER CARRYOVER
+// ==========================================
+
+export const resetManagedMemberCarryover = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { monthKey } = req.body;
+
+    if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid month is required',
+      });
+    }
+
+    const member = await User.findOne({
+      _id: id,
+      role: 'member',
+    });
+
+    if (!member) {
+      return res.status(404).json({
+        success: false,
+        message: 'Member not found',
+      });
+    }
+
+    await CarryoverReset.findOneAndUpdate(
+      {
+        user: id,
+        monthKey,
+      },
+      {
+        $set: {
+          resetBy: req.user._id,
+          resetAt: new Date(),
+        },
+        $setOnInsert: {
+          user: id,
+          monthKey,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    await BalanceAdjustment.deleteOne({
+      user: id,
+      monthKey,
+      adjustmentType: 'carryover',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `${member.name} carryover reset successfully`,
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
