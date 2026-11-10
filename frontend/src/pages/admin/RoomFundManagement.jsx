@@ -510,19 +510,28 @@ const money = (amount) =>
   const handleDownloadCsv = () => {
     const report = getRoomFundLedger();
 
-    if (report.transactions.length === 0) {
-      showToast('No Room Fund history to download', 'error');
+       if (
+      report.transactions.length === 0 &&
+      report.totalCredits === 0 &&
+      report.totalDebits === 0
+    ) {
+      showToast('No Room Fund data available to download', 'error');
       return;
     }
 
     const escapeCsv = (value) =>
       `"${String(value ?? '').replace(/"/g, '""')}"`;
 
-    const rows = [
+       const rows = [
       ['ROOM FUND MONTHLY LEDGER'],
       ['Selected Month', selectedMonth],
       [],
-      ['OVERALL SUMMARY'],
+      ['ROOM FUND MANAGEMENT SUMMARY'],
+      ['Total Room Fund', totalFund.toFixed(2)],
+      ['Used Room Fund', usedFund.toFixed(2)],
+      ['Remaining Room Fund', remainingFund.toFixed(2)],
+      [],
+      ['MONTHLY LEDGER SUMMARY'],
       ['Opening Balance', report.openingBalance.toFixed(2)],
       ['Total Contributions', report.totalCredits.toFixed(2)],
       ['Total Expenses', report.totalDebits.toFixed(2)],
@@ -678,7 +687,7 @@ const money = (amount) =>
 
             .summary {
               display: grid;
-              grid-template-columns: repeat(4, 1fr);
+              grid-template-columns: repeat(3, 1fr);
               gap: 10px;
               margin: 20px 0;
             }
