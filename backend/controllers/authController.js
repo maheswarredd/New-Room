@@ -52,7 +52,7 @@ export const login = async (req, res) => {
       success: true,
       message: `Welcome back, ${user.name}!`,
       token,
-      user: {
+            user: {
         id: user._id,
         name: user.name,
         email: user.email,
@@ -61,6 +61,7 @@ export const login = async (req, res) => {
         phone: user.phone,
         avatar: user.avatar,
         monthlyRentShare: user.monthlyRentShare,
+        accountBalance: user.accountBalance || 0,
       },
     });
   } catch (error) {
@@ -127,7 +128,7 @@ export const updateProfile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      user: {
+           user: {
         id: user._id,
         name: user.name,
         email: user.email,
@@ -135,6 +136,7 @@ export const updateProfile = async (req, res) => {
         roomNo: user.roomNo,
         phone: user.phone,
         avatar: user.avatar,
+        accountBalance: user.accountBalance || 0,
       },
     });
   } catch (error) {
