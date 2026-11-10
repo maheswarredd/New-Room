@@ -18,11 +18,11 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', getMembers);
+router.get('/:id', getMemberById);
+router.post('/:id/adjust-balance', adminOnly, adjustBalance);
 
 // Admin carryover management
 router.get('/carryovers', adminOnly, getCarryoverManagement);
-
-router.get('/:id', getMemberById);
 
 router.put(
   '/:id/carryover',
