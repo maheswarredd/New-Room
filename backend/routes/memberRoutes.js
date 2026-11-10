@@ -6,6 +6,10 @@ import {
   updateMember,
   deleteMember,
   adjustBalance,
+  getCarryoverManagement,
+  saveMemberCarryover,
+  removeMemberCarryover,
+  resetManagedMemberCarryover,
 } from '../controllers/memberController.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
@@ -15,6 +19,28 @@ router.use(protect);
 
 router.get('/', getMembers);
 router.get('/:id', getMemberById);
+router.post('/:id/adjust-balance', adminOnly, adjustBalance);
+
+// Admin carryover management
+router.get('/carryovers', adminOnly, getCarryoverManagement);
+
+router.put(
+  '/:id/carryover',
+  adminOnly,
+  saveMemberCarryover
+);
+
+router.delete(
+  '/:id/carryover',
+  adminOnly,
+  removeMemberCarryover
+);
+
+router.post(
+  '/:id/carryover/reset',
+  adminOnly,
+  resetManagedMemberCarryover
+);
 router.post('/', adminOnly, createMember);
 router.put('/:id', adminOnly, updateMember);
 router.delete('/:id', adminOnly, deleteMember);
